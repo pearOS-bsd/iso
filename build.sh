@@ -176,16 +176,17 @@ if [ -f "$ROOT/usr/share/misc/pci_vendors" ]; then
 	sed 's/^\t1050  Virtio 1\.0 GPU$/\t1050  pearOS Generic GPU (virtio)/' "$ROOT/usr/share/misc/pci_vendors" > "$WORK/pci_vendors.new" && cat "$WORK/pci_vendors.new" > "$ROOT/usr/share/misc/pci_vendors"; rm -f "$WORK/pci_vendors.new"
 fi
 [ -d "$ROOT/boot/modules" ] && kldxref "$ROOT/boot/modules"
-# Mac programs (github.com/pearOS-bsd/darwinator): machrun, a dyld for FreeBSD that runs Mach-O executables and applications (Objective-C 2 metadata turned into GNU runtime classes, Foundation and AppKit from GNUstep),
+# Mac programs (github.com/pearOS-bsd/dyld, the kernel module in github.com/pearOS-bsd/darwinator): machrun, a dyld for FreeBSD that runs Mach-O executables and applications (Objective-C 2 metadata turned into GNU runtime classes, Foundation and AppKit from GNUstep),
 # its helpers (libmachcompat.so: fixes of GNUstep that Apple's programs trip over; libexctrace.so: stack traces for debugging), `macapp APP.app`, and the kernel module darwinator.ko (static Mach-O programs, not loaded by default).
 # Built here, on the build machine (it has the compiler and GNUstep's headers); at boot the rc script wsbsd_machrun tells the kernel to hand Mach-O files to machrun (imgact_binmisc).
+DYLD_DIR=$(pear_repo dyld "$DYLD_DIR") || DYLD_DIR=""
 if pear_fetch darwinator "${PEAR_DARWINATOR_REF:-main}" "$WORK/darwinator"; then
-	if (cd "$WORK/darwinator/dyld" && make clean >/dev/null 2>&1; make >"$WORK/darwinator.log" 2>&1); then
+	if [ -n "$DYLD_DIR" ] && (cd "$DYLD_DIR/machrun" && make clean >/dev/null 2>&1; make >"$WORK/darwinator.log" 2>&1); then
 		install -d "$ROOT/usr/local/bin" "$ROOT/usr/local/lib" "$ROOT/usr/local/libexec"
-		install -m 755 "$WORK/darwinator/dyld/machrun" "$ROOT/usr/local/bin/machrun"
-		install -m 755 "$WORK/darwinator/dyld/libmachcompat.so" "$WORK/darwinator/dyld/libexctrace.so" "$ROOT/usr/local/lib/"
-		install -m 755 "$WORK/darwinator/tools/wrapapp.sh" "$ROOT/usr/local/libexec/wrapapp.sh"; install -m 755 "$WORK/darwinator/tools/macapp" "$ROOT/usr/local/bin/macapp"; install -m 755 "$WORK/darwinator/tools/macapp-install" "$ROOT/usr/local/bin/macapp-install"
-		ldd "$WORK/darwinator/dyld/machrun" | awk '/=>/ { print $3 }' | while read -r lib; do [ -e "$ROOT$lib" ] || echo "NOTE: machrun needs $lib and the image does not have it"; done
+		install -m 755 "$DYLD_DIR/machrun/machrun" "$ROOT/usr/local/bin/machrun"
+		install -m 755 "$DYLD_DIR/machrun/libmachcompat.so" "$DYLD_DIR/machrun/libexctrace.so" "$ROOT/usr/local/lib/"
+		install -m 755 "$DYLD_DIR/tools/wrapapp.sh" "$ROOT/usr/local/libexec/wrapapp.sh"; install -m 755 "$DYLD_DIR/tools/macapp" "$ROOT/usr/local/bin/macapp"; install -m 755 "$DYLD_DIR/tools/macapp-install" "$ROOT/usr/local/bin/macapp-install"
+		ldd "$DYLD_DIR/machrun/machrun" | awk '/=>/ { print $3 }' | while read -r lib; do [ -e "$ROOT$lib" ] || echo "NOTE: machrun needs $lib and the image does not have it"; done
 		for need in "$ROOT/usr/local/lib/libobjc.so.4.6" "$ROOT/usr/local/lib/libdispatch.so.1" "$ROOT/usr/lib/libBlocksRuntime.so.0"; do [ -e "$need" ] || echo "NOTE: Mac applications load $need at run time and the image does not have it"; done
 		echo "machrun built (darwinator $(cd "$WORK/darwinator" && ls -d .git >/dev/null 2>&1 && git rev-parse --short HEAD || echo "archive"))"
 	else echo "NOTE: machrun did not build (see $WORK/darwinator.log)"; tail -8 "$WORK/darwinator.log"; fi
