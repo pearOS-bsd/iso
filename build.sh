@@ -32,10 +32,12 @@ export SKYLIGHT_DIR D_DIR; export WINDOWSERVER_DIR="$WSRV_DIR"
 # the workspace: the layout the build scripts were written for (wsbsd/<module>, the programs next to it), made of links to the repositories
 W="$WORK/ws"; rm -rf "$W"; mkdir -p "$W/wsbsd"; WS="$W/wsbsd"; export GITHUB_WORKSPACE="$W"
 ln -s "$WSRV_DIR" "$W/WindowServer"; ln -s "$SKYLIGHT_DIR" "$W/SkyLight"; ln -s "$D_DIR" "$W/d"
+# copies, not links: the scripts reach their neighbours with "$D/../sdk" and the kernel resolves ".." through a link into the repository, not into this tree
+put() { mkdir -p "$2"; (cd "$1" && tar cf - --exclude .git .) | (cd "$2" && tar xf -); }
 for l in "$SDK_DIR:sdk" "$SDK_DIR/foundation:foundation" "$SDK_DIR/defaults:defaults" "$QC_DIR:quartzcore" "$COREUI_DIR:coreui" "$APPKIT_DIR:appkit" "$OPEN_DIR:open" \
 	"$LS_DIR:launchservices" "$LS_DIR/desktop-pictures:desktop-pictures" "$HERE:iso" "$HERE/ci:ci" "$HERE/ports:ports" "$HERE/dmg:dmg" \
-	"$APPS_DIR/dock:dock" "$APPS_DIR/finder:finder" "$APPS_DIR/topbar:topbar" "$APPS_DIR/loginwindow:loginwindow"; do ln -s "${l%:*}" "$WS/${l##*:}"; done
-for p in terminal textedit ksa uitest; do ln -s "$APPS_DIR/$p" "$W/$p"; done
+	"$APPS_DIR/dock:dock" "$APPS_DIR/finder:finder" "$APPS_DIR/topbar:topbar" "$APPS_DIR/loginwindow:loginwindow"; do put "${l%%:*}" "$WS/${l##*:}"; done
+for p in terminal textedit ksa uitest; do put "$APPS_DIR/$p" "$W/$p"; done
 
 echo "== 1. the software"
 pkg info -e zsh >/dev/null 2>&1 || pkg install -y zsh >/dev/null 2>&1 || true
