@@ -48,7 +48,7 @@ if [ -z "$SKIP_SOFTWARE" ]; then
 	pkg install -y python3 gmake pkgconf git >/dev/null 2>&1 || true
 	sh "$WS/ci/gnustep-setup.sh" > "$WORK/gnustep.log" 2>&1 || { tail -30 "$WORK/gnustep.log"; exit 1; }
 	# the display server back-end of the gui must be ours (back-wsd): the one of the package (X11) makes every program die with "Unable to connect to X Server"
-	BACK=/usr/local/GNUstep/System/Library/Bundles/libgnustep-back-032.bundle/libgnustep-back-032
+	BACK=/usr/local/GNUstep/Local/Library/Bundles/libgnustep-back-032.bundle/libgnustep-back-032      # libs-back installs into the Local domain, which GNUstep searches before System
 	if ! strings "$BACK" 2>/dev/null | grep -q WsdServer; then
 		echo "ERROR: the installed libgnustep-back has no wsd server (the libs-back build or install failed); logs follow"
 		echo "--- gnustep-setup.sh output (errors)"; grep -n -i -E "error|fatal|undefined|No such file|Stop\." "$WORK/gnustep.log" | head -40

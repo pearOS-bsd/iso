@@ -91,5 +91,7 @@ sed -i '' 's/cairo_OBJC_FILES += Win32CairoSurface.m Win32CairoGState.m/cairo_OB
 ./configure --enable-server=headless --enable-graphics=cairo 2>&1 | tail -5
 gmake -j2 > /tmp/back-build.log 2>&1; grep -E "error|Error|warning: implicit|undefined" /tmp/back-build.log | head -30; grep -B1 -A4 "error:" /tmp/back-build.log | head -40
 gmake install 2>&1 | tail -3
+# the packaged X11 back-end (a dependency of another package) must not be able to win: remove it
+pkg delete -fy gnustep-back >/dev/null 2>&1 || true; rm -rf /usr/local/GNUstep/System/Library/Bundles/libgnustep-back-032.bundle
 echo DIAG; pkg info gnustep-gui gnustep-base gnustep-make | grep -i '^Name\|^Version'; grep -n 'NSWindowAbove\|NSWindowBelow\|NSWindowOut' /usr/local/GNUstep/System/Library/Headers/AppKit/NSWindow.h /usr/local/GNUstep/System/Library/Headers/AppKit/AppKitDefines.h /usr/local/GNUstep/System/Library/Headers/AppKit/NSGraphics.h 2>/dev/null | head -5; ls Source/headless/obj/*/ 2>&1 | head -20; nm -D /usr/local/GNUstep/Local/Library/Bundles/libgnustep-back-032.bundle/libgnustep-back-032 | grep -c ws_; grep -n wsc_ Source/headless/GNUmakefile.preamble | cut -c1-150; echo ENDDIAG
 
