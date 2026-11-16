@@ -1,0 +1,5 @@
+name: hygiene
+on: [push, pull_request]
+jobs:
+  hygiene:
+    uses: pearOS-bsd/.github/.github/workflows/hygiene.yml@main
