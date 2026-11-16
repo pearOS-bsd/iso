@@ -115,6 +115,12 @@ macdesktop_start()
 		done
 	done ) >/var/log/session.log 2>&1 &
 	echo $! > $SD/supervisor.pid
+	# a second, deeper report on the serial port, 70 s after the start (a test run only): where the desktop programs wait
+	[ "$(kenv -q smbios.system.product 2>/dev/null)" = wsbsd-ci ] && ( sleep 70; { echo "== deep report"; echo "console: [$(cat $SD/console 2>/dev/null)] sessions: [$(cat $SD/sessions 2>/dev/null | tr '\n' ' ')] user: [$(cat /var/run/wsbsd.user 2>/dev/null)]"; ls -la $SD /var/run/WindowServer.sock 2>&1 | head -12
+	  ps ax -o pid,user,state,wchan,command | grep -E "wsd|Dock|Finder|SystemUIServer|Terminal|launchd" | grep -v grep
+	  for a in Finder Dock; do p=$(pgrep -x $a | head -1); [ -n "$p" ] && { echo "== truss $a ($p)"; timeout 4 truss -p $p 2>&1 | tail -12; echo "== procstat $a"; procstat -kk $p 2>&1 | head -12; }; done
+	  [ -x /usr/local/bin/wswins ] && { echo "== wswins"; WS_SOCKET=/var/run/WindowServer.sock timeout 5 /usr/local/bin/wswins 2>&1 | head -20; }
+	  echo "== messages"; tail -15 /var/log/messages 2>/dev/null; echo "== deep report end"; } > /dev/ttyu0 2>/dev/null ) &
 	# a report on the serial port (if there is one), 25 s after the start: the programs of the desktop that run, and the end of the log of the Finder and of every program that does not (the screen is the window server's and the console is muted)
 	( sleep 25; { echo "== desktop report"; echo "== session.log"; tail -15 /var/log/session.log 2>/dev/null; echo "== loginwindow.log"; tail -8 /var/log/loginwindow.log 2>/dev/null; echo "== Dock by hand"; U=$(cat /var/run/wsbsd.user 2>/dev/null); su -m "${U:-root}" -c "env HOME=/Users/${U:-root} timeout 6 /usr/lib/dyld /System/Library/CoreServices/Dock.app/Contents/MacOS/Dock" 2>&1 | tail -15; echo "== launchd.log"; tail -15 /var/log/launchd.*.log 2>/dev/null; ps ax -o pid,stat,command | grep -E "launchd|loginwindow" | grep -v grep; ps ax -o pid,stat,command | grep -E "WindowServer|Dock|SystemUIServer|Finder|Terminal|usernoted|gdnc|gdomap" | grep -v grep; for a in Finder WindowServer Dock SystemUIServer Terminal; do pgrep -f "$a" >/dev/null 2>&1 || echo "== $a is not running"; echo "== tail of $a.log"; tail -12 /var/log/$a.log 2>/dev/null; done; ls /System/Library/Desktop\ Pictures 2>&1; } > /dev/ttyu0 2>/dev/null ) &
 }
