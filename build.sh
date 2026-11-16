@@ -34,7 +34,7 @@ W="$WORK/ws"; rm -rf "$W"; mkdir -p "$W/wsbsd"; WS="$W/wsbsd"; export GITHUB_WOR
 ln -s "$WSRV_DIR" "$W/WindowServer"; ln -s "$SKYLIGHT_DIR" "$W/SkyLight"; ln -s "$D_DIR" "$W/d"
 # copies, not links: the scripts reach their neighbours with "$D/../sdk" and the kernel resolves ".." through a link into the repository, not into this tree
 put() { mkdir -p "$2"; (cd "$1" && tar cf - --exclude .git .) | (cd "$2" && tar xf -); }
-for l in "$SDK_DIR:sdk" "$SDK_DIR/foundation:foundation" "$SDK_DIR/defaults:defaults" "$QC_DIR:quartzcore" "$COREUI_DIR:coreui" "$APPKIT_DIR:appkit" "$OPEN_DIR:open" \
+for l in "$SDK_DIR:sdk" "$SDK_DIR/defaults:defaults" "$QC_DIR:quartzcore" "$COREUI_DIR:coreui" "$APPKIT_DIR:appkit" "$OPEN_DIR:open" \
 	"$LS_DIR:launchservices" "$LS_DIR/desktop-pictures:desktop-pictures" "$HERE:iso" "$HERE/ci:ci" "$HERE/ports:ports" "$HERE/dmg:dmg" \
 	"$APPS_DIR/dock:dock" "$APPS_DIR/finder:finder" "$APPS_DIR/topbar:topbar" "$APPS_DIR/loginwindow:loginwindow"; do put "${l%%:*}" "$WS/${l##*:}"; done
 for p in terminal textedit ksa uitest; do put "$APPS_DIR/$p" "$W/$p"; done
@@ -75,7 +75,7 @@ for c in CoreGlyphs CoreTypes; do [ -f "$WS/coreui/assets/$c.car" ] && install -
 # the Dock and the status area of the menu bar (they talk to wsd through the client library: a static archive of the objects above)
 ar rcs "$WORK/libwsclient.a" "$WORK"/ws_*.o
 COMPAT="$WORK/compat" WSCLIENT="$WORK/libwsclient.a" sh "$WS/dock/build.sh" "$WORK/dock" > "$WORK/dock.log" 2>&1; install -m 755 "$WORK/dock/Dock" /usr/local/bin/Dock-gnustep || { cat "$WORK/dock.log"; exit 1; }
-COMPAT="$WORK/compat" sh "$WS/topbar/build.sh" "$WORK/topbar" > "$WORK/topbar.log" 2>&1; install -m 755 "$WORK/topbar/TopBar" /usr/local/bin/TopBar-gnustep || { cat "$WORK/topbar.log"; exit 1; }
+COMPAT="$WORK/compat" WSCLIENT="$WORK/libwsclient.a" sh "$WS/topbar/build.sh" "$WORK/topbar" > "$WORK/topbar.log" 2>&1; install -m 755 "$WORK/topbar/TopBar" /usr/local/bin/TopBar-gnustep || { cat "$WORK/topbar.log"; exit 1; }
 COMPAT="$WORK/compat" sh "$WS/loginwindow/build.sh" "$WORK/loginwindow" > "$WORK/loginwindow.log" 2>&1; install -m 755 "$WORK/loginwindow/loginwindow" /usr/local/bin/loginwindow-gnustep || { cat "$WORK/loginwindow.log"; exit 1; }
 COMPAT="$WORK/compat" sh "$WS/../textedit/build.sh" "$WORK/textedit" > "$WORK/textedit.log" 2>&1; install -m 755 "$WORK/textedit/TextEdit" /usr/local/bin/TextEdit-gnustep || { cat "$WORK/textedit.log"; exit 1; }
 # the Finder: built from finder/, with the resources of the reference Mac's Finder imported when they are at hand (FINDER_APP=path of Finder.app, or finder/Resources copied in before the build); it lands as /System/Library/CoreServices/Finder.app
