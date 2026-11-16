@@ -1,0 +1,116 @@
+# library-name-pattern	class	note
+# classes: own (our code, BSD) bsd mit isc zlib apache apsl lgpl gpl closed-apple
+libgnustep-base	lgpl	GNUstep Base: library sources LGPL-2.1 (tools are GPL, not linked)
+libgnustep-gui	lgpl	GNUstep GUI: LGPL-2.1 except Source/GSIconManager.m (GPL-only: do not ship that file in the library)
+libgnustep-back	lgpl	GNUstep Back
+libgnustep-corebase	lgpl	GNUstep CoreBase
+libopal	lgpl	Opal (Quartz 2D)
+libgnustep-quartzcore	lgpl	GNUstep QuartzCore
+libobjc.so	mit	libobjc2 (GNUstep runtime)
+libwsclient	own	our window server client library
+libwsbsdcompat	own	our compatibility layer
+libQuartzCore	own	our QuartzCore
+libc.so	bsd	FreeBSD libc
+libm.so	bsd	FreeBSD libm
+libthr	bsd	FreeBSD threads
+libutil	bsd	FreeBSD
+libz	zlib	zlib
+libcrypto	apache	OpenSSL 3 (Apache-2.0)
+libssl	apache	OpenSSL 3 (Apache-2.0)
+libffi	mit	libffi
+libxml2	mit	libxml2
+libicu	icu	ICU licence (permissive)
+libcairo	lgpl	cairo (LGPL-2.1 or MPL-1.1)
+libfreetype	bsd	FreeType (FTL / GPLv2: used under the FTL)
+libfontconfig	mit	fontconfig
+libdispatch	apache	libdispatch (Apache-2.0)
+libBlocksRuntime	apache	blocks runtime
+libgcc_s	gpl-exception	GCC runtime library exception
+libstdc++	gpl-exception	GCC runtime library exception
+libc++	apache	LLVM (Apache-2.0 with exceptions)
+libSystem.B.dylib	closed-apple	from the user's Mac (macdeps): never distributed
+libobjc.A.dylib	closed-apple	from the user's Mac
+libx264	gpl	x264 is GPL-2: a process that loads it is a GPL work
+libx265	gpl	x265 is GPL-2
+libdvdnav	gpl	GPL-2
+libdvdread	gpl	GPL-2
+libavcodec	lgpl-or-gpl	FFmpeg: LGPL, GPL when built with --enable-gpl (x264 present: treat as gpl)
+libavformat	lgpl-or-gpl	FFmpeg
+libavutil	lgpl-or-gpl	FFmpeg
+libswscale	lgpl-or-gpl	FFmpeg
+libswresample	lgpl-or-gpl	FFmpeg
+libbluray	lgpl	LGPL-2.1
+libmp3lame	lgpl	LGPL
+libmpg123	lgpl	LGPL-2.1
+libsndfile	lgpl	LGPL-2.1
+libgnutls	lgpl	LGPL-2.1+
+libnettle	lgpl	LGPL
+libhogweed	lgpl	LGPL
+libgmp	lgpl	LGPL-3 or GPL-2 dual
+libunistring	lgpl	LGPL-3 or GPL-2 dual
+libidn2	lgpl	LGPL-3 or GPL-2 dual
+libp11-kit	bsd	BSD-3
+libtasn1	lgpl	LGPL
+libglib	lgpl	LGPL-2.1
+libgobject	lgpl	LGPL-2.1
+libgio	lgpl	LGPL-2.1
+libgmodule	lgpl	LGPL-2.1
+libpango	lgpl	LGPL-2.1
+libgdk_pixbuf	lgpl	LGPL-2.1
+librsvg	lgpl	LGPL-2.1
+libharfbuzz	mit	MIT
+libfribidi	lgpl	LGPL-2.1
+libthai	lgpl	LGPL-2.1
+libdatrie	lgpl	LGPL-2.1
+libgraphite2	lgpl	LGPL-2.1 / MPL / GPL
+libpcre2	bsd	BSD
+libcurl	mit	curl licence
+libpng	zlib	libpng licence
+libtiff	bsd	libtiff
+libjpeg	bsd	IJG / BSD
+libgif	mit	MIT
+libvpx	bsd	BSD-3
+libaom	bsd	BSD-2
+libdav1d	bsd	BSD-2
+libSvtAv1	bsd	BSD-3-Clause-Clear
+libopus	bsd	BSD-3
+libvorbis	bsd	BSD-3
+libogg	bsd	BSD-3
+libFLAC	bsd	BSD-3
+libwebp	bsd	BSD-3
+libsharpyuv	bsd	BSD-3
+libjxl	bsd	BSD-3
+libhwy	apache	Apache-2.0
+libvmaf	bsd	BSD-2 + patent
+liblcms2	mit	MIT
+libdeflate	mit	MIT
+libjbig	gpl-or-commercial	GPL-2 only: check (jbigkit)
+libLerc	apache	Apache-2.0
+libbrotli	mit	MIT
+libnghttp2	mit	MIT
+libssh2	bsd	BSD-3
+libpsl	mit	MIT
+libexpat	mit	MIT
+libbz2	bsd	bzip2 licence
+liblzma	pd	public domain (xz)
+libintl	lgpl	gettext-runtime LGPL
+libiconv	lgpl	LGPL
+libX11	mit	X11
+libXext	mit	X11
+libXrender	mit	X11
+libxcb	mit	X11
+libXau	mit	X11
+libXdmcp	mit	X11
+libpixman	mit	MIT
+libdrm	mit	MIT
+libva	mit	MIT
+libvdpau	mit	MIT
+libdbus	afl-or-gpl	dbus: AFL-2.1 or GPL-2+ (use under AFL)
+libavahi	lgpl	LGPL-2.1
+libxslt	mit	MIT
+libao	gpl	libao is GPL-2
+libudfread	lgpl	LGPL-2.1
+libsrt	mpl	MPL-2.0
+libinotify	mit	MIT
+libcxxrt	bsd	BSD-2
+libmd	bsd	BSD
