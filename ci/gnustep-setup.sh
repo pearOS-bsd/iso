@@ -56,7 +56,7 @@ cp "$WSRV"/include/ws_xkb.h "$WSRV"/include/ws_input.h Headers/wsd/ || exit 1; c
 cp "$WS"/appkit/back-wsd/*.m Source/headless/
 # the wsd client library is compiled straight into the headless subproject (a static archive is not picked up by the bundle link)
 for f in client compositor_sw region ipc evrec buffer keymap xkbmap; do cp "$WSRV/src/$f.c" Source/headless/wsc_$f.c; done
-printf 'ADDITIONAL_INCLUDE_DIRS += -I%s/include\nADDITIONAL_CFLAGS += -std=gnu99 -D_DEFAULT_SOURCE\nheadless_C_FILES += wsc_client.c wsc_compositor_sw.c wsc_region.c wsc_ipc.c wsc_evrec.c wsc_buffer.c wsc_keymap.c wsc_xkbmap.c\nADDITIONAL_CFLAGS += -DWSD_XKB -I/usr/local/include $(shell pkg-config --cflags xkbcommon)\nADDITIONAL_LDFLAGS += -L/usr/local/lib -lxkbcommon\n' "$WS" >> Source/headless/GNUmakefile.preamble
+printf 'ADDITIONAL_INCLUDE_DIRS += -I%s/include -I%s/include\nADDITIONAL_CFLAGS += -std=gnu99 -D_DEFAULT_SOURCE\nheadless_C_FILES += wsc_client.c wsc_compositor_sw.c wsc_region.c wsc_ipc.c wsc_evrec.c wsc_buffer.c wsc_keymap.c wsc_xkbmap.c\nADDITIONAL_CFLAGS += -DWSD_XKB -I/usr/local/include $(shell pkg-config --cflags xkbcommon)\nADDITIONAL_LDFLAGS += -L/usr/local/lib -lxkbcommon\n' "$WSRV" "${SKYLIGHT_DIR:-$WS/../SkyLight}" >> Source/headless/GNUmakefile.preamble
 # the asset catalogue reader (SF Symbols' vector glyphs for the file panels): coreui/car.c, bvg.c and the LZFSE decoder it uses, compiled into the same subproject
 mkdir -p Source/headless/lzfse; cp "$WS"/coreui/lzfse/*.h Source/headless/lzfse/; cp "$WS"/coreui/lzfse/*.h Source/headless/; cp "$WS"/coreui/car.h "$WS"/coreui/bvg.h Source/headless/
 cp "$WS"/coreui/car.c Source/headless/cu_car.c; cp "$WS"/coreui/bvg.c Source/headless/cu_bvg.c; cp "$WS"/coreui/bitmap.c Source/headless/cu_bitmap.c
