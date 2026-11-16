@@ -3,7 +3,7 @@
 # AppKit (GNUstep gui) on wsd: builds libs-back with the "wsd" display server (appkit/back-wsd) in place of the headless one, then runs
 # an AppKit program against a live wsd and takes a screenshot of the screen.
 export IGNORE_OSVERSION=yes
-pkg install -y neofetch gnustep-sudoku gnustep-back gnustep-make gnustep-base gnustep-gui cairo freetype2 fontconfig git png jpeg-turbo tiff pkgconf gmake lcms2 bzip2 icu libffi dejavu autoconf libdispatch python3 curl openssl >/dev/null 2>&1 || true
+pkg install -y neofetch gnustep-sudoku gnustep-make gnustep-base gnustep-gui cairo freetype2 fontconfig git png jpeg-turbo tiff pkgconf gmake lcms2 bzip2 icu libffi dejavu autoconf libdispatch python3 curl openssl >/dev/null 2>&1 || true
 cat > /usr/local/libdata/pkgconfig/bzip2.pc <<EOP
 Name: bzip2
 Description: bzip2
@@ -52,7 +52,7 @@ python3 "$WS"/ci/patch-gui-types.py /usr/local/GNUstep/System/Library/Headers/Ap
 git clone https://github.com/gnustep/libs-back back 2>&1 | tail -1; git -C back checkout -q 36ac709b892caf697bf4d27624854dbbfdd19da4
 cd back
 mkdir -p Headers/wsd
-cp "$WS"/include/ws_xkb.h "$WS"/include/ws_input.h Headers/wsd/ 2>/dev/null; cp "$WS"/appkit/back-wsd/*.h "$WS"/include/ws.h "$WS"/include/ws_client.h "$WS"/include/ws_buffer.h Headers/wsd/
+cp "$WSRV"/include/ws_xkb.h "$WSRV"/include/ws_input.h Headers/wsd/ || exit 1; cp "$WS"/appkit/back-wsd/*.h "$WSRV"/include/ws.h "$WSRV"/include/ws_client.h "$WSRV"/include/ws_buffer.h Headers/wsd/ || exit 1     # the wsd headers live in the WindowServer repository
 cp "$WS"/appkit/back-wsd/*.m Source/headless/
 # the wsd client library is compiled straight into the headless subproject (a static archive is not picked up by the bundle link)
 for f in client compositor_sw region ipc evrec buffer keymap xkbmap; do cp "$WSRV/src/$f.c" Source/headless/wsc_$f.c; done
