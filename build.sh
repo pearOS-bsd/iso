@@ -190,7 +190,7 @@ fi
 # Built here, on the build machine (it has the compiler and GNUstep's headers); at boot the rc script wsbsd_machrun tells the kernel to hand Mach-O files to machrun (imgact_binmisc).
 DYLD_DIR=$(pear_repo dyld "$DYLD_DIR") || DYLD_DIR=""
 if pear_fetch darwinator "${PEAR_DARWINATOR_REF:-main}" "$WORK/darwinator"; then
-	if [ -n "$DYLD_DIR" ] && (cd "$DYLD_DIR/machrun" && make clean >/dev/null 2>&1; make CFLAGS="-I$DYLD_DIR/src -I$WORK/darwinator/src -O1 -Wall -Wno-unused-parameter" >"$WORK/darwinator.log" 2>&1); then
+	if [ -n "$DYLD_DIR" ] && (cd "$DYLD_DIR/machrun" && make clean >/dev/null 2>&1; make CFLAGS="-fPIE -fPIC -I$DYLD_DIR/src -I$WORK/darwinator/src -O1 -Wall -Wno-unused-parameter" >"$WORK/darwinator.log" 2>&1); then
 		install -d "$ROOT/usr/local/bin" "$ROOT/usr/local/lib" "$ROOT/usr/local/libexec"
 		install -m 755 "$DYLD_DIR/machrun/machrun" "$ROOT/usr/local/bin/machrun"
 		[ -f "$OPEN_DIR/open" ] && { install -m 755 "$OPEN_DIR/open" "$ROOT/usr/local/bin/open"; install -m 755 "$OPEN_DIR/open-patch.py" "$ROOT/usr/local/libexec/open-patch.py"; }     # the launcher; the stand-in libraries it needs (/open/AppKit ...) are built on a Mac (open/build-appkit.sh) and are not in the image yet
