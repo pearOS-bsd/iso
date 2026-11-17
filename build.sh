@@ -199,7 +199,7 @@ if pear_fetch darwinator "${PEAR_DARWINATOR_REF:-main}" "$WORK/darwinator"; then
 		ldd "$DYLD_DIR/machrun/machrun" | awk '/=>/ { print $3 }' | while read -r lib; do [ -e "$ROOT$lib" ] || echo "NOTE: machrun needs $lib and the image does not have it"; done
 		for need in "$ROOT/usr/local/lib/libobjc.so.4.6" "$ROOT/usr/local/lib/libdispatch.so.1" "$ROOT/usr/lib/libBlocksRuntime.so.0"; do [ -e "$need" ] || echo "NOTE: Mac applications load $need at run time and the image does not have it"; done
 		echo "machrun built (darwinator $(cd "$WORK/darwinator" && ls -d .git >/dev/null 2>&1 && git rev-parse --short HEAD || echo "archive"))"
-	else echo "NOTE: machrun did not build (see $WORK/darwinator.log)"; tail -8 "$WORK/darwinator.log"; fi
+	else echo "NOTE: machrun did not build (see $WORK/darwinator.log)"; grep -E "undefined symbol|cannot find|error:" "$WORK/darwinator.log" | sort | uniq -c | sort -rn | head -25; tail -4 "$WORK/darwinator.log"; ls -la /usr/local/lib/libobjc* /usr/local/GNUstep/System/Library/Libraries/libobjc* 2>&1 | head -6; fi
 	if [ -d "$SYSDIR/dev/acpica" ] && (cd "$WORK/darwinator" && make SYSDIR="$SYSDIR" clean >/dev/null 2>&1; make SYSDIR="$SYSDIR" >"$WORK/darwinator_ko.log" 2>&1); then
 		install -d "$ROOT/boot/modules" && install -m 555 "$WORK/darwinator/darwinator.ko" "$ROOT/boot/modules/darwinator.ko" && echo "darwinator.ko built against $SYSDIR"
 	else echo "NOTE: darwinator.ko not built (no kernel sources or it did not compile: see $WORK/darwinator_ko.log): only machrun runs Mach-O files"; fi
