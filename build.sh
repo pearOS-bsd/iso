@@ -46,6 +46,7 @@ pkg info -e zsh-autosuggestions >/dev/null 2>&1 || pkg install -y zsh-autosugges
 pkg info -e lsof >/dev/null 2>&1 || pkg install -y lsof >/dev/null 2>&1 || true       # Sloth (a test application) runs /usr/sbin/lsof, which the Mac has and FreeBSD does not
 if [ -z "$SKIP_SOFTWARE" ]; then
 	pkg install -y python3 gmake pkgconf git >/dev/null 2>&1 || true
+pkg info -e llvm21 >/dev/null 2>&1 || pkg install -y llvm21 >/dev/null 2>&1 || true   # clang + ld64.lld: launchd and /open (Mach-O programs built on FreeBSD)
 	sh "$WS/ci/gnustep-setup.sh" > "$WORK/gnustep.log" 2>&1 || { tail -30 "$WORK/gnustep.log"; exit 1; }
 	# the display server back-end of the gui must be ours (back-wsd): the one of the package (X11) makes every program die with "Unable to connect to X Server"
 	BACK=/usr/local/GNUstep/Local/Library/Bundles/libgnustep-back-032.bundle/libgnustep-back-032      # libs-back installs into the Local domain, which GNUstep searches before System
@@ -204,6 +205,18 @@ if pear_fetch darwinator "${PEAR_DARWINATOR_REF:-main}" "$WORK/darwinator"; then
 		install -d "$ROOT/boot/modules" && install -m 555 "$WORK/darwinator/darwinator.ko" "$ROOT/boot/modules/darwinator.ko" && echo "darwinator.ko built against $SYSDIR"
 	else echo "NOTE: darwinator.ko not built (no kernel sources or it did not compile: see $WORK/darwinator_ko.log): only machrun runs Mach-O files"; fi
 else echo "NOTE: pearOS-bsd/darwinator could not be fetched: this image does not run Mac programs"; fi
+# /open: our AppKit, Cocoa and the stand-in libraries, built here with clang + ld64.lld from the open sources (dyld/tools/sdk/build-open-sdk.sh): no Mac, no file of Apple's. The programs run through the real dyld of the owner's Mac (macdeps puts it
+# and the cache on the machine); the files of this directory are ours.
+OPENLD=$(ls /usr/local/llvm*/bin/ld64.lld 2>/dev/null | tail -1)
+if [ -n "$OPENLD" ] && [ -n "$DYLD_DIR" ] && [ -d "$WORK/darwinator/src" ]; then
+	OT="$WORK/opentree"; rm -rf "$OT"; mkdir -p "$OT"
+	FOUNDATION_DIR=$(pear_repo Foundation "$FOUNDATION_DIR") && COREGRAPHICS_DIR=$(pear_repo CoreGraphics "$COREGRAPHICS_DIR") || true
+	for r in "AppKit:$APPKIT_DIR" "WindowServer:$WSRV_DIR" "SkyLight:$SKYLIGHT_DIR" "CoreUI:$COREUI_DIR" "dyld:$DYLD_DIR" "darwinator:$WORK/darwinator" "open:$OPEN_DIR" "Foundation:$FOUNDATION_DIR" "CoreGraphics:$COREGRAPHICS_DIR"; do ln -s "${r#*:}" "$OT/${r%%:*}"; done
+	if sh "$DYLD_DIR/tools/sdk/build-open-sdk.sh" "$WORK/oss" "$OT" "$WORK/open-out" >"$WORK/open-sdk.log" 2>&1 && [ -f "$WORK/open-out/AppKit" ]; then
+		install -d "$ROOT/open"; for f in AppKit Cocoa stub-*; do [ -f "$WORK/open-out/$f" ] && install -m 755 "$WORK/open-out/$f" "$ROOT/open/$f"; done
+		echo "/open built: $(ls "$ROOT/open" | tr '\n' ' ')"
+	else echo "NOTE: /open did not build (see $WORK/open-sdk.log)"; tail -5 "$WORK/open-sdk.log"; fi
+else echo "NOTE: /open not built (needs the llvm package with ld64.lld, dyld and darwinator)"; fi
 # The launchd of pearOS (a Mach-O program from d/darwin/launchd, built with clang and ld64.lld: the llvm package on the build machine): it serves the bootstrap port and the service
 # com.apple.bsd.dirhelper; started at boot by wsbsd_launchd when the module runs Mach-O files through a real dyld.
 if [ -x /usr/local/llvm21/bin/ld64.lld ] && [ -d "$D_DIR/darwin/launchd" ]; then
