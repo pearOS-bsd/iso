@@ -1,14 +1,14 @@
 #!/bin/sh
-# An interactive session for a person: builds the stack, starts wsd with a VNC viewer port and the Terminal, and opens a public TCP tunnel for a limited time.
+# An interactive session for a person: builds the stack, starts WindowServer with a VNC viewer port and the Terminal, and opens a public TCP tunnel for a limited time.
 # usage: sh ci/vnc-session.sh <minutes>
 MINUTES="${1:-5}"
 . "$(dirname "$0")/gnustep-setup.sh"
 cd "$WS"
 cc -O1 -std=c99 -D_DEFAULT_SOURCE -Iinclude -o wsshot tools/wsshot.c /tmp/wsc/libwsclient.a -lm
-gmake wsd 2>&1 | tail -2
+gmake WindowServer 2>&1 | tail -2
 PW=$(head -c 4096 /dev/urandom | LC_ALL=C tr -dc 'a-zA-Z' | head -c 8)
 export WS_SOCKET=/tmp/wsd-vnc.sock
-WSD_VNC_PASSWORD="$PW" ./wsd -g 1280x800 -V 5900 >/tmp/wsd.log 2>&1 &
+WSD_VNC_PASSWORD="$PW" ./WindowServer -g 1280x800 -V 5900 >/tmp/WindowServer.log 2>&1 &
 WP=$!
 sleep 1
 TD="$WS/../terminal"
@@ -42,8 +42,8 @@ echo
 # a heartbeat line every 20 seconds (also keeps the connection to the runner busy) with the load, memory and whether the processes are alive
 END=$(( $(date +%s) + MINUTES * 60 ))
 while [ "$(date +%s)" -lt "$END" ]; do
-	echo "heartbeat $(date +%T) load: $(uptime | sed 's/.*load averages*: //') wsd:$(kill -0 $WP 2>/dev/null && echo up || echo DOWN) terminal:$(pgrep -f Terminal-gnustep >/dev/null && echo up || echo DOWN) tunnels:$(kill -0 $TP 2>/dev/null && echo up || echo DOWN)/$(kill -0 $TP1 2>/dev/null && echo up || echo DOWN) mem-free-pages:$(sysctl -n vm.stats.vm.v_free_count)"
-	grep 'wsd: vnc' /tmp/wsd.log | tail -2
+	echo "heartbeat $(date +%T) load: $(uptime | sed 's/.*load averages*: //') WindowServer:$(kill -0 $WP 2>/dev/null && echo up || echo DOWN) terminal:$(pgrep -f Terminal-gnustep >/dev/null && echo up || echo DOWN) tunnels:$(kill -0 $TP 2>/dev/null && echo up || echo DOWN)/$(kill -0 $TP1 2>/dev/null && echo up || echo DOWN) mem-free-pages:$(sysctl -n vm.stats.vm.v_free_count)"
+	grep 'WindowServer: vnc' /tmp/WindowServer.log | tail -2
 	sleep 20
 done
 kill $TP $TP1 $WP 2>/dev/null

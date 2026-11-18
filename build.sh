@@ -2,7 +2,7 @@
 # Builds the ISO. Run as root on FreeBSD (CI: vmactions/freebsd-vm), from the repository:  sh wsbsd/iso/build.sh
 #   OUT=dir               where the ISO goes (default wsbsd/iso-out)
 #   PLOADER_DIR=dir       the Ploader build (ploader_x64.efi, theme/, drivers_x64/): from the `ploader` job of .github/workflows/iso.yml
-#   SKIP_SOFTWARE=1       the software (GNUstep stack, wsd, apps) is already built and installed under /usr/local
+#   SKIP_SOFTWARE=1       the software (GNUstep stack, WindowServer, apps) is already built and installed under /usr/local
 # The result: pearOS-UltraC0re-<arch>-<YY.MM>.iso (the year and month of the build; PEAROS_VERSION overrides), UEFI, Ploader first, FreeBSD's loader without screens, then the window server.
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -51,7 +51,7 @@ pkg info -e llvm21 >/dev/null 2>&1 || pkg install -y llvm21 >/dev/null 2>&1 || t
 	# the display server back-end of the gui must be ours (back-wsd): the one of the package (X11) makes every program die with "Unable to connect to X Server"
 	BACK=/usr/local/GNUstep/Local/Library/Bundles/libgnustep-back-032.bundle/libgnustep-back-032      # libs-back installs into the Local domain, which GNUstep searches before System
 	if ! strings "$BACK" 2>/dev/null | grep -q WsdServer; then
-		echo "ERROR: the installed libgnustep-back has no wsd server (the libs-back build or install failed); logs follow"
+		echo "ERROR: the installed libgnustep-back has no WindowServer server (the libs-back build or install failed); logs follow"
 		echo "--- gnustep-setup.sh output (errors)"; grep -n -i -E "error|fatal|undefined|No such file|Stop\." "$WORK/gnustep.log" | head -40
 		echo "--- libs-back build log (tail)"; tail -40 /tmp/back-build.log 2>/dev/null
 		echo "--- gnustep-setup.sh output (tail)"; tail -30 "$WORK/gnustep.log"
@@ -63,10 +63,10 @@ fi
 for need in /usr/local/GNUstep/System/Library/Libraries/libgnustep-gui.so.0.32 /usr/local/GNUstep/System/Library/Libraries/libgnustep-base.so.1.31 /usr/local/GNUstep/Local/Library/Libraries/libgnustep-corebase.so.0 /usr/local/GNUstep/Local/Library/Libraries/libopal.so.0; do
 	[ -f "$need" ] || { echo "missing after the software build: $need"; ls /usr/local/GNUstep/System/Library/Libraries /usr/local/GNUstep/Local/Library/Libraries 2>&1 | head -20; tail -20 "$WORK/gnustep.log" "$WORK/opal.log" 2>/dev/null; exit 1; }
 done
-# the window server twice: wsd = DRM/KMS display + OpenGL ES compositor (Mesa; used when a GPU driver is loaded), wsd-fb = the console framebuffer + software compositor (no GPU driver: EFI GOP, VMs, NVIDIA).
-# The rc script starts wsd first and falls back to wsd-fb when it cannot get a display; wsd itself falls back to the software compositor when EGL / GLES2 cannot be initialised.
+# the window server twice: WindowServer = DRM/KMS display + OpenGL ES compositor (Mesa; used when a GPU driver is loaded), wsd-fb = the console framebuffer + software compositor (no GPU driver: EFI GOP, VMs, NVIDIA).
+# The rc script starts WindowServer first and falls back to wsd-fb when it cannot get a display; WindowServer itself falls back to the software compositor when EGL / GLES2 cannot be initialised.
 pkg info -e mesa-libs >/dev/null 2>&1 || pkg install -y mesa-libs mesa-dri libdrm >/dev/null 2>&1 || true
-(cd "$WSRV_DIR" && gmake SKYLIGHT="$SKYLIGHT_DIR" fb >/dev/null && install -d /usr/local/sbin && install -m 755 wsd /usr/local/sbin/wsd-fb && { gmake SKYLIGHT="$SKYLIGHT_DIR" full >"$WORK/wsd-full.log" 2>&1 && install -m 755 wsd /usr/local/sbin/wsd || { echo "NOTE: gmake full failed (no Mesa / libdrm?), wsd is the framebuffer build"; tail -5 "$WORK/wsd-full.log"; install -m 755 wsd-fb /usr/local/sbin/wsd 2>/dev/null || cp /usr/local/sbin/wsd-fb /usr/local/sbin/wsd; }; } && gmake wsspace wsshot wsclick wskey wsdrag wswins wsfps wsmove wscursor >/dev/null && install -d /usr/local/bin && install -m 755 wsspace wsshot wsclick wskey wsdrag wswins wsfps wsmove wscursor /usr/local/bin/)
+(cd "$WSRV_DIR" && gmake SKYLIGHT="$SKYLIGHT_DIR" fb >/dev/null && install -d /usr/local/sbin && install -m 755 WindowServer /usr/local/sbin/wsd-fb && { gmake SKYLIGHT="$SKYLIGHT_DIR" full >"$WORK/wsd-full.log" 2>&1 && install -m 755 WindowServer /usr/local/sbin/WindowServer || { echo "NOTE: gmake full failed (no Mesa / libdrm?), WindowServer is the framebuffer build"; tail -5 "$WORK/wsd-full.log"; install -m 755 wsd-fb /usr/local/sbin/WindowServer 2>/dev/null || cp /usr/local/sbin/wsd-fb /usr/local/sbin/WindowServer; }; } && gmake wsspace wsshot wsclick wskey wsdrag wswins wsfps wsmove wscursor >/dev/null && install -d /usr/local/bin && install -m 755 wsspace wsshot wsclick wskey wsdrag wswins wsfps wsmove wscursor /usr/local/bin/)
 (install -d /usr/local/bin; cc -O2 -o /usr/local/bin/dmgtool "$WS/dmg/dmgtool.c" -lz -lbz2 2>"$WORK/dmgtool.log" || echo "NOTE: dmgtool did not build"; cd "$WSRV_DIR/src" && for f in client compositor_sw region ipc evrec buffer; do cc -O2 -fPIC -std=c99 -D_DEFAULT_SOURCE -I"$WSRV_DIR/include" -I"$SKYLIGHT_DIR/include" -c $f.c -o "$WORK/ws_$f.o"; done; cc -shared -o /usr/local/lib/libwsclient.so "$WORK"/ws_*.o -lm)
 sh "$WS/sdk/build-compat.sh" "$WORK/compat" > "$WORK/compat.log" 2>&1; install -m 755 "$WORK/compat/libwsbsdcompat.so" /usr/local/lib/libwsbsdcompat.so; install -m 755 "$WORK/compat/libQuartzCore.so" /usr/local/lib/libQuartzCore.so
 # Wi-Fi: CoreWLAN, CoreWiFi and airportd, laid out as on the Mac (installed below under /System and /usr/libexec)
@@ -82,7 +82,7 @@ install -d /usr/local/share/wsbsd/icons && install -m 644 "$HERE"/icons/*.icns /
 # the asset catalogues of the Mac that the file panels read (coreui): the small ones are in the repository, the big ones (SF Symbols 117 MB, CoreTypes 20 MB) are copied into coreui/assets before the build or are already in place
 install -d /usr/local/share/wsbsd/coreui && install -m 644 "$WS"/coreui/assets/DesktopServicesPriv.car "$WS"/coreui/assets/CoreTypes-Info.plist "$WS"/coreui/assets/name_aliases.strings /usr/local/share/wsbsd/coreui/
 for c in CoreGlyphs CoreTypes; do [ -f "$WS/coreui/assets/$c.car" ] && install -m 644 "$WS/coreui/assets/$c.car" /usr/local/share/wsbsd/coreui/$c.car; [ -f /usr/local/share/wsbsd/coreui/$c.car ] || echo "NOTE: $c.car missing, the file panels draw without it"; done
-# the Dock and the status area of the menu bar (they talk to wsd through the client library: a static archive of the objects above)
+# the Dock and the status area of the menu bar (they talk to WindowServer through the client library: a static archive of the objects above)
 ar rcs "$WORK/libwsclient.a" "$WORK"/ws_*.o
 COMPAT="$WORK/compat" WSCLIENT="$WORK/libwsclient.a" sh "$WS/dock/build.sh" "$WORK/dock" > "$WORK/dock.log" 2>&1; install -m 755 "$WORK/dock/Dock" /usr/local/bin/Dock-gnustep || { cat "$WORK/dock.log"; exit 1; }
 COMPAT="$WORK/compat" WSCLIENT="$WORK/libwsclient.a" sh "$WS/topbar/build.sh" "$WORK/topbar" > "$WORK/topbar.log" 2>&1; install -m 755 "$WORK/topbar/TopBar" /usr/local/bin/TopBar-gnustep || { cat "$WORK/topbar.log"; exit 1; }
@@ -114,7 +114,7 @@ mkdir -p "$ROOT/usr/local"
 PDFLIBS="$(cd / && ls usr/local/lib/libpoppler-glib.so* usr/local/lib/libEGL_mesa.so* usr/local/lib/libGLX_mesa.so* 2>/dev/null)"   # libEGL_mesa / libGLX_mesa: the Mesa vendor libraries libglvnd dlopens (without them eglGetPlatformDisplay fails with EGL_BAD_PARAMETER and no GL compositor starts)
 echo "$PDFLIBS" | grep -q libEGL_mesa || echo "NOTE: libEGL_mesa.so is not installed, the GL compositor cannot start"
 true   # dlopen'ed by PDFImage.m: the dependency scan below follows them
-tar -C / -cf - $PDFLIBS usr/local/GNUstep usr/local/sbin/lsof usr/local/sbin/wsd usr/local/sbin/wsd-fb usr/local/lib/dri usr/local/lib/gbm usr/local/share/glvnd usr/local/share/drirc.d usr/local/sbin/spctl usr/local/bin usr/local/libexec/dyld usr/local/lib/libwsclient.so usr/local/lib/libwsbsdcompat.so usr/local/lib/libQuartzCore.so usr/local/share/fonts usr/local/etc/fonts usr/local/share/wsbsd usr/local/bin/zsh usr/local/bin/sudo usr/local/libexec/sudo usr/local/lib/sudo usr/local/share/zsh usr/local/share/zsh-autosuggestions usr/local/lib/zsh usr/local/share/icu usr/local/lib/libicudata.so usr/local/lib/libicudata.so.76 usr/local/lib/libicudata.so.76.1 2>/dev/null | tar -C "$ROOT" -xpf -
+tar -C / -cf - $PDFLIBS usr/local/GNUstep usr/local/sbin/lsof usr/local/sbin/WindowServer usr/local/sbin/wsd-fb usr/local/lib/dri usr/local/lib/gbm usr/local/share/glvnd usr/local/share/drirc.d usr/local/sbin/spctl usr/local/bin usr/local/libexec/dyld usr/local/lib/libwsclient.so usr/local/lib/libwsbsdcompat.so usr/local/lib/libQuartzCore.so usr/local/share/fonts usr/local/etc/fonts usr/local/share/wsbsd usr/local/bin/zsh usr/local/bin/sudo usr/local/libexec/sudo usr/local/lib/sudo usr/local/share/zsh usr/local/share/zsh-autosuggestions usr/local/lib/zsh usr/local/share/icu usr/local/lib/libicudata.so usr/local/lib/libicudata.so.76 usr/local/lib/libicudata.so.76.1 2>/dev/null | tar -C "$ROOT" -xpf -
 mkdir -p "$ROOT/usr/sbin"; ln -sf /usr/local/sbin/lsof "$ROOT/usr/sbin/lsof"       # where the Mac's applications look for it
 # guest tools of VMware and VirtualBox (before the library scan, which then follows their dependencies)
 sh "$HERE/tools/guesttools.sh" "$ROOT" || echo "NOTE: guest tools failed"

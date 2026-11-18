@@ -1,5 +1,5 @@
 #!/bin/sh
-# Runs the programs of sdk/tests against the compat layer (needs GNUstep gui/back, Opal and a running wsd: WS_SOCKET): sh ci/sdk-tests.sh
+# Runs the programs of sdk/tests against the compat layer (needs GNUstep gui/back, Opal and a running WindowServer: WS_SOCKET): sh ci/sdk-tests.sh
 . /usr/local/GNUstep/System/Library/Makefiles/GNUstep.sh
 WS0="$(cd "$(dirname "$0")/.." && pwd)"
 # Opal (CoreGraphics) and corebase (CoreFoundation): built from source when this runner does not have them yet

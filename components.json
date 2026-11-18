@@ -20,7 +20,7 @@
     "/System/Library/CoreServices/Finder.app": "/usr/local/share/wsbsd/Finder.app"
   },
   "files": {
-    "/System/Library/PrivateFrameworks/SkyLight.framework/Versions/A/Resources/WindowServer": "/usr/local/sbin/wsd",
+    "/System/Library/PrivateFrameworks/SkyLight.framework/Versions/A/Resources/WindowServer": "/usr/local/sbin/WindowServer",
     "/System/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal": "/usr/local/bin/Terminal-gnustep",
     "/System/Applications/TextEdit.app/Contents/MacOS/TextEdit": "/usr/local/bin/TextEdit-gnustep",
     "/Applications/UITest.app/Contents/MacOS/UITest": "/usr/local/bin/UITest-gnustep",

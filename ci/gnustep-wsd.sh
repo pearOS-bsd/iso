@@ -1,6 +1,6 @@
 #!/bin/sh
-# AppKit (GNUstep gui) on wsd: builds libs-back with the "wsd" display server (appkit/back-wsd) in place of the headless one, then runs
-# AppKit programs against a live wsd and takes screenshots (hello, Sudoku, Gorm, Terminal with neofetch).
+# AppKit (GNUstep gui) on WindowServer: builds libs-back with the "WindowServer" display server (appkit/back-wsd) in place of the headless one, then runs
+# AppKit programs against a live WindowServer and takes screenshots (hello, Sudoku, Gorm, Terminal with neofetch).
 . "$(dirname "$0")/gnustep-setup.sh"
 cd "$WS"
 cc -o hello appkit/hello.m $(gnustep-config --objc-flags) $(gnustep-config --gui-libs) 2>&1 | tail -15
@@ -9,10 +9,10 @@ cc -O1 -std=c99 -D_DEFAULT_SOURCE -Iinclude -o wsclick tools/wsclick.c /tmp/wsc/
 cc -O1 -std=c99 -D_DEFAULT_SOURCE -Iinclude -o wsdrag tools/wsdrag.c /tmp/wsc/libwsclient.a -lm
 cc -O1 -std=c99 -D_DEFAULT_SOURCE -Iinclude -o wskey tools/wskey.c /tmp/wsc/libwsclient.a -lm
 cc -O1 -std=c99 -D_DEFAULT_SOURCE -Iinclude -o wswins tools/wswins.c /tmp/wsc/libwsclient.a -lm
-gmake wsd 2>&1 | tail -2
+gmake WindowServer 2>&1 | tail -2
 export WS_SOCKET=/tmp/wsd-appkit.sock
-export XDG_CURRENT_DESKTOP=Aqua XDG_SESSION_DESKTOP=Aqua XDG_SESSION_TYPE=wsd      # what wsstart exports: neofetch shows DE: Aqua
-./wsd -t -g 1280x800 >/tmp/wsd.log 2>&1 &
+export XDG_CURRENT_DESKTOP=Aqua XDG_SESSION_DESKTOP=Aqua XDG_SESSION_TYPE=WindowServer      # what wsstart exports: neofetch shows DE: Aqua
+./WindowServer -t -g 1280x800 >/tmp/WindowServer.log 2>&1 &
 WP=$!
 sleep 1
 cc -fobjc-arc -o test_tracking test/test_tracking.m $(gnustep-config --objc-flags) $(gnustep-config --gui-libs) 2>&1 | grep error
@@ -90,7 +90,7 @@ if [ -n "$GAPP" ]; then
 	kill $GP 2>/dev/null; pkill -f Gorm 2>/dev/null
 	grep -v '^(lldb)\|warning\|wsd-back: ' /tmp/gorm.log | tail -25
 fi
-# Terminal (terminal/): a terminal emulator written against the public Cocoa API, built with GNUstep and run on wsd with some shell output
+# Terminal (terminal/): a terminal emulator written against the public Cocoa API, built with GNUstep and run on WindowServer with some shell output
 TD="$WS/../terminal"
 if [ -d "$TD" ]; then
 	(cd "$TD" && make test 2>&1 | tail -2 && cc -o Terminal-gnustep src/vt.c src/pty.c src/TermView.m src/main.m $(gnustep-config --objc-flags) $(gnustep-config --gui-libs) -lutil 2>&1 | grep -E "error|undefined" | head -15)
@@ -123,7 +123,7 @@ if [ -x "$TD/Terminal-gnustep" ]; then
 	TPP=$!; sleep 5; ./wsshot terminal-parity.ppm && python3 tools/ppm2png.py terminal-parity.ppm terminal-parity.png
 	i=0; while kill -0 $TPP 2>/dev/null && [ $i -lt 15 ]; do sleep 1; i=$((i+1)); done; pkill -f Terminal-gnustep 2>/dev/null
 fi
-# Keyboard Setup Assistant (ksa/): the same Cocoa sources as on macOS, run on wsd; every pane is screenshotted and the Shift-key flow is checked
+# Keyboard Setup Assistant (ksa/): the same Cocoa sources as on macOS, run on WindowServer; every pane is screenshotted and the Shift-key flow is checked
 KD="$WS/../ksa"
 if [ -d "$KD" ]; then
 	(cd "$KD" && cc -o KeyboardSetupAssistant-gnustep src/main.m $(gnustep-config --objc-flags) $(gnustep-config --gui-libs) 2>&1 | grep -E "error|undefined" | head -20)
@@ -170,7 +170,7 @@ PY
 	fi
 fi
 echo '=== SDK TESTS (compat layer) ==='; sh "$WS/ci/sdk-tests.sh" 2>&1 | tee sdk-tests.log | tail -30
-# Finder (finder/): built against the compat layer, started on wsd with a folder of files; the window must be on the screen and drawn
+# Finder (finder/): built against the compat layer, started on WindowServer with a folder of files; the window must be on the screen and drawn
 echo '=== FINDER ==='; FO=/tmp/finder-ci; rm -rf $FO /tmp/fintest; mkdir -p /tmp/fintest/Folder; for n in a.txt b.png c.pdf; do echo x > /tmp/fintest/$n; done
 if COMPAT=/tmp/sdk-compat sh "$WS/finder/build.sh" $FO > /tmp/finder-build.log 2>&1 && [ -x $FO/System/Library/CoreServices/Finder.app/Contents/MacOS/Finder ]; then
 	(cd $FO/System/Library/CoreServices/Finder.app/Contents/MacOS && FINDER_CRASHLOG=1 HOME=/tmp/finhome FINDER_PATH=/tmp/fintest FINDER_WINDOW=1 UI_EXIT_AFTER=60 timeout 60 ./Finder >/tmp/finder-run.log 2>&1; echo "Finder exit status $?" >> /tmp/finder-run.log) &
@@ -196,7 +196,7 @@ PY
 else echo 'Finder did not build'; tail -20 /tmp/finder-build.log; FINDER_BAD=1; fi
 kill $WP 2>/dev/null
 echo '=== OSS APP PROBE ==='; sh "$WS/ci/oss-probe.sh" 2>&1 | tee oss-probe.log | tail -80
-grep -v '^(lldb)\|warning\|wsd-back: \(titlewindow\|setinput\|flush\|commit\|order\|ws_win\)' /tmp/hello.log | tail -40; tail -5 /tmp/wsd.log
+grep -v '^(lldb)\|warning\|wsd-back: \(titlewindow\|setinput\|flush\|commit\|order\|ws_win\)' /tmp/hello.log | tail -40; tail -5 /tmp/WindowServer.log
 ls -l appkit.png
 echo '=== TERMINAL (terminal/) ==='; cat /tmp/terminal-ci.txt 2>/dev/null
 grep -q 'SDK TEST .*FAILED\|did not build' sdk-tests.log 2>/dev/null && { echo '=== sdk-tests.log ==='; tail -60 sdk-tests.log | cut -c1-240; echo 'SDK TESTS FAILED'; exit 1; }

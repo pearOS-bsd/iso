@@ -34,24 +34,24 @@ wsbsd_gpu_try()
 	done
 	return 1
 }
-# a GL probe before the window server starts: the OpenGL ES compositor is started once on the render node in a throw-away headless wsd, with the driver's debug output on and every system call traced; what
+# a GL probe before the window server starts: the OpenGL ES compositor is started once on the render node in a throw-away headless WindowServer, with the driver's debug output on and every system call traced; what
 # failed (system calls, kernel messages, Mesa / EGL messages) goes into the report, so that a machine where EGL does not start explains itself without anyone typing commands
 wsbsd_gpu_probe()
 {
-	[ -x /usr/local/sbin/wsd ] || return 0
+	[ -x /usr/local/sbin/WindowServer ] || return 0
 	P=/var/log/wsbsd_gl_probe; T=/var/run/wsbsd_gl_probe.truss; rm -f $T
-	wsbsd_gpu_log "-- GL probe (headless wsd, GL compositor on /dev/dri/renderD128, drm debug core+driver, 8 s)"
+	wsbsd_gpu_log "-- GL probe (headless WindowServer, GL compositor on /dev/dri/renderD128, drm debug core+driver, 8 s)"
 	wsbsd_gpu_log "i915 parameters: $(sysctl -n compat.linuxkpi.i915_enable_guc 2>/dev/null | sed 's/^/enable_guc=/') $(sysctl -n compat.linuxkpi.i915_reset 2>/dev/null | sed 's/^/reset=/') $(sysctl -n compat.linuxkpi.i915_modeset 2>/dev/null | sed 's/^/modeset=/')"
 	before=$(dmesg | wc -l)
 	sysctl compat.linuxkpi.drm_debug=0x03 >/dev/null 2>&1
-	WS_SOCKET=/var/run/wsbsd_gl_probe.sock LIBGL_DEBUG=verbose MESA_DEBUG=1 EGL_LOG_LEVEL=debug timeout 8 truss -f -o $T /usr/local/sbin/wsd -b headless -r gl -g 640x480 > $P.out 2>&1
+	WS_SOCKET=/var/run/wsbsd_gl_probe.sock LIBGL_DEBUG=verbose MESA_DEBUG=1 EGL_LOG_LEVEL=debug timeout 8 truss -f -o $T /usr/local/sbin/WindowServer -b headless -r gl -g 640x480 > $P.out 2>&1
 	sysctl compat.linuxkpi.drm_debug=0 >/dev/null 2>&1
 	rm -f /var/run/wsbsd_gl_probe.sock
 	# the same start with each Mesa driver forced in turn (what works tells where the fault is: iris = the Intel driver, zink = Vulkan on top, kms_swrast / swrast = software rendering through the same GBM / EGL path)
-	{ echo "-- Mesa drivers one by one (wsd: GL init / GL compositor lines)"
+	{ echo "-- Mesa drivers one by one (WindowServer: GL init / GL compositor lines)"
 	  for d in iris zink kms_swrast swrast; do
 	    echo "== MESA_LOADER_DRIVER_OVERRIDE=$d"
-	    WS_SOCKET=/var/run/wsbsd_gl_probe.sock MESA_LOADER_DRIVER_OVERRIDE=$d MESA_DEBUG=1 EGL_LOG_LEVEL=debug timeout 6 /usr/local/sbin/wsd -b headless -r gl -g 640x480 2>&1 | grep -E 'wsd: (GL|render)|libEGL|MESA|iris|zink|error|failed' | head -6
+	    WS_SOCKET=/var/run/wsbsd_gl_probe.sock MESA_LOADER_DRIVER_OVERRIDE=$d MESA_DEBUG=1 EGL_LOG_LEVEL=debug timeout 6 /usr/local/sbin/WindowServer -b headless -r gl -g 640x480 2>&1 | grep -E 'WindowServer: (GL|render)|libEGL|MESA|iris|zink|error|failed' | head -6
 	    rm -f /var/run/wsbsd_gl_probe.sock
 	  done
 	  echo "-- the last 60 system calls of the first probe (what Mesa did before it gave up)"
@@ -68,7 +68,7 @@ wsbsd_gpu_probe()
 	  echo "-- gbmprobe truss: files opened / failed calls"; grep -E 'open\(|ERR#|gbm|dlopen' $P.gbm.truss | grep -E 'dri|gbm|gallium|mesa|EGL|ERR#' | grep -v -E 'drirc|ioctl' | cut -c1-170 | head -45
 	  echo "-- failed ioctls of gbmprobe"; grep -E 'ioctl\(.*ERR#' $P.gbm.truss | cut -c1-170 | head -15
 	  echo "-- last 25 calls of gbmprobe"; tail -25 $P.gbm.truss | cut -c1-170; } > /var/log/wsbsd_gl_diag.txt 2>&1
-	{ echo "-- GL probe: what wsd said"; grep -v drirc $P.out | head -20
+	{ echo "-- GL probe: what WindowServer said"; grep -v drirc $P.out | head -20
 	  echo "-- GL probe: ioctls on the DRM nodes that failed (ERR#19 = no such device, #22 = invalid argument)"
 	  grep -E 'ioctl\(.*ERR#' $T | head -30
 	  cat $P.drivers

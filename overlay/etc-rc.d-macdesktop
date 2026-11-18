@@ -16,7 +16,7 @@ macdesktop_start()
 	VMware*) { service vmware-kmod onestart; service vmware-guestd onestart; } >/dev/null 2>&1 || true ;;
 	VirtualBox*) { kldload vboxguest; service vboxservice onestart; } >/dev/null 2>&1 || true ;;
 	esac
-	export WSD_SPLASH=1 WS_SOCKET=/var/run/WindowServer.sock HOME=/Users/root XDG_CURRENT_DESKTOP=Aqua XDG_SESSION_DESKTOP=Aqua XDG_SESSION_TYPE=wsd TERM=xterm-256color
+	export WSD_SPLASH=1 WS_SOCKET=/var/run/WindowServer.sock HOME=/Users/root XDG_CURRENT_DESKTOP=Aqua XDG_SESSION_DESKTOP=Aqua XDG_SESSION_TYPE=WindowServer TERM=xterm-256color
 	[ -x /bin/zsh ] && export SHELL=/bin/zsh
 	mkdir -p /var/run
 	# the image is read-only: the home of the session (preferences, GNUstep's caches and sockets) is memory
@@ -35,11 +35,11 @@ macdesktop_start()
 	pgrep -x gdnc >/dev/null || daemon -f -o /var/log/gdnc.log $GS/gdnc --auto --daemon
 	i=0; while [ $i -lt 60 ] && ! pgrep -x gdnc >/dev/null; do sleep 1; i=$((i+1)); done
 	rm -f $WS_SOCKET
-	# with a GPU driver loaded (wsbsd_gpu): the DRM/KMS display and the OpenGL ES compositor (wsd falls back to the software compositor by itself when EGL / GLES2 cannot start); when there is no
-	# /dev/dri/card0, a CI run, or wsd cannot take the display within a few seconds: the console framebuffer with the software compositor (wsd-fb)
+	# with a GPU driver loaded (wsbsd_gpu): the DRM/KMS display and the OpenGL ES compositor (WindowServer falls back to the software compositor by itself when EGL / GLES2 cannot start); when there is no
+	# /dev/dri/card0, a CI run, or WindowServer cannot take the display within a few seconds: the console framebuffer with the software compositor (wsd-fb)
 	gpu_ok=0
 	case "$(kenv -q smbios.system.product 2>/dev/null)" in wsbsd-ci*) ;; *)
-		if [ -e /dev/dri/card0 ] && [ -x /usr/local/sbin/wsd ] && [ ! -e /var/run/wsbsd/nokms ]; then
+		if [ -e /dev/dri/card0 ] && [ -x /usr/local/sbin/WindowServer ] && [ ! -e /var/run/wsbsd/nokms ]; then
 			mkdir -p /var/tmp/mesa_shader_cache; env HOME=/root MESA_SHADER_CACHE_DIR=/var/tmp/mesa_shader_cache EGL_LOG_LEVEL=info daemon -f -o /var/log/WindowServer.log -p /var/run/WindowServer.pid $WS -b kms -c /dev/dri/card0 -r gl -t -F
 			i=0; while [ $i -lt 40 ] && [ ! -S $WS_SOCKET ]; do sleep 0.25; i=$((i+1)); done
 			if [ -S $WS_SOCKET ] && pgrep -f "WindowServer -b kms" >/dev/null 2>&1; then gpu_ok=1; echo "macdesktop: KMS + GL display" > /dev/console 2>/dev/null
@@ -55,8 +55,8 @@ macdesktop_start()
 	  { echo "-- window server"
 	    if [ $gpu_ok = 1 ]; then echo "display: KMS on /dev/dri/card0 (driver: $(kldstat 2>/dev/null | grep -o -E 'i915kms|radeonkms|amdgpu' | sort -u | tr '\n' ' '))"
 	    else echo "display: console framebuffer (EFI GOP / vt), no DRM display"; fi
-	    grep -E '^wsd: (framebuffer|[0-9]+x[0-9]+,|GL compositor|GL init|built without GL|DRM|KMS)' $W 2>/dev/null | head -12
-	    if grep -q 'wsd: GL compositor: ' $W 2>/dev/null && ! grep -q 'falling back to software' $W 2>/dev/null; then echo "acceleration: GPU (OpenGL ES compositor)"
+	    grep -E '^WindowServer: (framebuffer|[0-9]+x[0-9]+,|GL compositor|GL init|built without GL|DRM|KMS)' $W 2>/dev/null | head -12
+	    if grep -q 'WindowServer: GL compositor: ' $W 2>/dev/null && ! grep -q 'falling back to software' $W 2>/dev/null; then echo "acceleration: GPU (OpenGL ES compositor)"
 	    else echo "acceleration: CPU (software compositor)"; fi
 	  } >> $L
 	  { echo "== GPU report"; cat $L; } > /dev/ttyu0 2>/dev/null ) &
@@ -117,7 +117,7 @@ macdesktop_start()
 	echo $! > $SD/supervisor.pid
 	# a second, deeper report on the serial port, 70 s after the start (a test run only): where the desktop programs wait
 	[ "$(kenv -q smbios.system.product 2>/dev/null)" = wsbsd-ci ] && ( sleep 70; { echo "== deep report"; echo "console: [$(cat $SD/console 2>/dev/null)] sessions: [$(cat $SD/sessions 2>/dev/null | tr '\n' ' ')] user: [$(cat /var/run/wsbsd.user 2>/dev/null)]"; ls -la $SD /var/run/WindowServer.sock 2>&1 | head -12
-	  ps ax -o pid,user,state,wchan,command | grep -E "wsd|Dock|Finder|SystemUIServer|Terminal|launchd" | grep -v grep
+	  ps ax -o pid,user,state,wchan,command | grep -E "WindowServer|Dock|Finder|SystemUIServer|Terminal|launchd" | grep -v grep
 	  for a in Finder Dock; do p=$(pgrep -x $a | head -1); [ -n "$p" ] && { echo "== truss $a ($p)"; timeout 4 truss -p $p 2>&1 | tail -12; echo "== procstat $a"; procstat -kk $p 2>&1 | head -12; }; done
 	  [ -x /usr/local/bin/wswins ] && { echo "== wswins"; WS_SOCKET=/var/run/WindowServer.sock timeout 5 /usr/local/bin/wswins 2>&1 | head -20; }
 	  echo "== messages"; tail -15 /var/log/messages 2>/dev/null; echo "== deep report end"; } > /dev/ttyu0 2>/dev/null ) &

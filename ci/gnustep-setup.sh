@@ -1,7 +1,7 @@
 #!/bin/sh
-# (sourced) the GNUstep + wsd back-end build shared by gnustep-wsd.sh and vnc-session.sh
-# AppKit (GNUstep gui) on wsd: builds libs-back with the "wsd" display server (appkit/back-wsd) in place of the headless one, then runs
-# an AppKit program against a live wsd and takes a screenshot of the screen.
+# (sourced) the GNUstep + WindowServer back-end build shared by gnustep-wsd.sh and vnc-session.sh
+# AppKit (GNUstep gui) on WindowServer: builds libs-back with the "WindowServer" display server (appkit/back-wsd) in place of the headless one, then runs
+# an AppKit program against a live WindowServer and takes a screenshot of the screen.
 export IGNORE_OSVERSION=yes
 pkg install -y neofetch gnustep-sudoku gnustep-make gnustep-base gnustep-gui cairo freetype2 fontconfig git png jpeg-turbo tiff pkgconf gmake lcms2 bzip2 icu libffi dejavu autoconf libdispatch python3 curl openssl >/dev/null 2>&1 || true
 cat > /usr/local/libdata/pkgconfig/bzip2.pc <<EOP
@@ -16,7 +16,7 @@ WS="${GITHUB_WORKSPACE:-$(cd "$(dirname "$0")/../.." && pwd)}/wsbsd"
 WSRV="${WINDOWSERVER_DIR:-$WS/../WindowServer}"
 [ -d "$WS" ] || WS="$(cd "$(dirname "$0")/.." && pwd)"
 
-# the wsd client library, position independent so the back bundle can link it
+# the WindowServer client library, position independent so the back bundle can link it
 mkdir -p /tmp/wsc && cd /tmp/wsc
 for f in client compositor_sw region ipc evrec buffer; do
 	cc -O2 -fPIC -std=c99 -D_DEFAULT_SOURCE -I"$WSRV/include" -I"${SKYLIGHT_DIR:-$WS/../SkyLight}/include" -c "$WSRV/src/$f.c" -o $f.o || exit 1
@@ -51,10 +51,10 @@ sh "$WS"/ci/patch-nsimage-template.sh gui   # a bit field named "template" keeps
 python3 "$WS"/ci/patch-gui-types.py /usr/local/GNUstep/System/Library/Headers/AppKit   # the typed returns Apple declares (contentView, cell, itemArray ...) and Foundation's block types, on the installed headers
 git clone https://github.com/gnustep/libs-back back 2>&1 | tail -1; git -C back checkout -q 36ac709b892caf697bf4d27624854dbbfdd19da4
 cd back
-mkdir -p Headers/wsd
-cp "$WSRV"/include/ws_xkb.h "$WSRV"/include/ws_input.h Headers/wsd/ || exit 1; cp "$WS"/appkit/back-wsd/*.h "$WSRV"/include/ws.h "$WSRV"/include/ws_client.h "$WSRV"/include/ws_buffer.h Headers/wsd/ || exit 1     # the wsd headers live in the WindowServer repository
+mkdir -p Headers/WindowServer
+cp "$WSRV"/include/ws_xkb.h "$WSRV"/include/ws_input.h Headers/WindowServer/ || exit 1; cp "$WS"/appkit/back-wsd/*.h "$WSRV"/include/ws.h "$WSRV"/include/ws_client.h "$WSRV"/include/ws_buffer.h Headers/WindowServer/ || exit 1     # the WindowServer headers live in the WindowServer repository
 cp "$WS"/appkit/back-wsd/*.m Source/headless/
-# the wsd client library is compiled straight into the headless subproject (a static archive is not picked up by the bundle link)
+# the WindowServer client library is compiled straight into the headless subproject (a static archive is not picked up by the bundle link)
 for f in client compositor_sw region ipc evrec buffer keymap xkbmap; do cp "$WSRV/src/$f.c" Source/headless/wsc_$f.c; done
 printf 'ADDITIONAL_INCLUDE_DIRS += -I%s/include -I%s/include\nADDITIONAL_CFLAGS += -std=gnu99 -D_DEFAULT_SOURCE\nheadless_C_FILES += wsc_client.c wsc_compositor_sw.c wsc_region.c wsc_ipc.c wsc_evrec.c wsc_buffer.c wsc_keymap.c wsc_xkbmap.c\nADDITIONAL_CFLAGS += -DWSD_XKB -I/usr/local/include $(shell pkg-config --cflags xkbcommon)\nADDITIONAL_LDFLAGS += -L/usr/local/lib -lxkbcommon\n' "$WSRV" "${SKYLIGHT_DIR:-$WS/../SkyLight}" >> Source/headless/GNUmakefile.preamble
 # the asset catalogue reader (SF Symbols' vector glyphs for the file panels): coreui/car.c, bvg.c and the LZFSE decoder it uses, compiled into the same subproject
@@ -62,14 +62,14 @@ mkdir -p Source/headless/lzfse; cp "$WS"/coreui/lzfse/*.h Source/headless/lzfse/
 cp "$WS"/coreui/car.c Source/headless/cu_car.c; cp "$WS"/coreui/bvg.c Source/headless/cu_bvg.c; cp "$WS"/coreui/bitmap.c Source/headless/cu_bitmap.c
 for f in lzfse_decode lzfse_decode_base lzfse_fse lzvn_decode_base; do cp "$WS/coreui/lzfse/$f.c" Source/headless/cu_$f.c; done
 printf 'headless_C_FILES += cu_car.c cu_bvg.c cu_bitmap.c cu_lzfse_decode.c cu_lzfse_decode_base.c cu_lzfse_fse.c cu_lzvn_decode_base.c\nADDITIONAL_LDFLAGS += -lm\n' >> Source/headless/GNUmakefile.preamble
-# headless server -> wsd server
+# headless server -> WindowServer server
 sed -i '' 's/^HeadlessServer.m \\/HeadlessServer.m WsdServer.m WsdCairoSurface.m WsdMacTheme.m WsdCGBridge.m WsdFilePanel.m WsdAppKitColors.m WsdAppKitView.m WsdTracking.m WsdMenuItem.m WsdGlass.m WsdSymbolImage.m WsdWorkspace.m WsdTextView.m WsdDocument.m WsdViewController.m WsdGesture.m WsdControls.m WsdTabbing.m WsdAppearance.m WsdDragDrop.m WsdMenuBar.m WsdPopover.m WsdSheets.m WsdResize.m WsdMoreAppKit.m WsdSymbolFallback.m \\/' Source/headless/GNUmakefile
 printf '\nWsdFilePanel.m_FILE_FLAGS = -fobjc-arc\n' >> Source/headless/GNUmakefile                  # the file panel is written for ARC
-sed -i '' 's/HeadlessServer/WsdServer/g; s#<headless/WsdServer.h>#<wsd/WsdServer.h>#' Source/GSBackend.m
+sed -i '' 's/HeadlessServer/WsdServer/g; s#<headless/WsdServer.h>#<WindowServer/WsdServer.h>#' Source/GSBackend.m
 python3 - <<PY
 p='Source/cairo/CairoContext.m'
 s=open(p).read()
-s=s.replace('#else\n#  error Invalid server for Cairo backend','#elif BUILD_SERVER == SERVER_headless\n#  include "wsd/WsdServer.h"\n#  include "cairo/CairoGState.h"\n#  include "wsd/WsdCairoSurface.h"\n#  define _CAIRO_GSTATE_CLASSNAME CairoGState\n#  define _CAIRO_SURFACE_CLASSNAME WsdCairoSurface\n#else\n#  error Invalid server for Cairo backend',1)
+s=s.replace('#else\n#  error Invalid server for Cairo backend','#elif BUILD_SERVER == SERVER_headless\n#  include "WindowServer/WsdServer.h"\n#  include "cairo/CairoGState.h"\n#  include "WindowServer/WsdCairoSurface.h"\n#  define _CAIRO_GSTATE_CLASSNAME CairoGState\n#  define _CAIRO_SURFACE_CLASSNAME WsdCairoSurface\n#else\n#  error Invalid server for Cairo backend',1)
 open(p,'w').write(s)
 p='Source/GNUmakefile.preamble'
 s=open(p).read()
