@@ -228,6 +228,27 @@ if [ -x /usr/local/llvm21/bin/ld64.lld ] && [ -d "$D_DIR/darwin/launchd" ]; then
 		else echo "NOTE: notifyd did not build (see $WORK/notifyd.log)"; fi
 	else echo "NOTE: launchd did not build (see $WORK/launchd.log)"; fi
 else echo "NOTE: launchd not built (no ld64.lld or no darwin/launchd in the d repository)"; fi
+# The Mach side of the desktop for the programs of the Mac (d/darwin: notifyd, wsbridge = the front of the window server, carender-stub = the render server, lsd and service stand-ins; all Mach-O programs built with
+# clang + ld64.lld) and our Control Center (apps/controlcenter-cocoa, built the same way on the headers of the open SDK): rc.d/wsbsd_macstack starts them when the Mac's frameworks are there.  Not fatal when a piece does not build.
+if [ -x /usr/local/llvm21/bin/ld64.lld ] && [ -d "$D_DIR/darwin" ]; then
+	if sh "$D_DIR/darwin/build.sh" "$WORK/darwin-out" >"$WORK/darwin.log" 2>&1; then
+		install -d "$ROOT/usr/libexec/pearos"
+		for f in wsbridge/wsbridge notifyd/notifyd lsd-stub/out/lsd-stub carender-stub/out/carender-stub svc-stub/out/svc-stub; do [ -x "$WORK/darwin-out/$f" ] && install -m 755 "$WORK/darwin-out/$f" "$ROOT/usr/libexec/pearos/$(basename "$f")" || echo "NOTE: $f was not built"; done
+		install -m 755 "$D_DIR/darwin/launchd/mkfolders.sh" "$ROOT/usr/libexec/pearos/mkfolders.sh" 2>/dev/null || true
+		echo "darwin stack built: $(ls "$ROOT/usr/libexec/pearos" | tr '\n' ' ')"
+	else echo "NOTE: the darwin stack did not build (see $WORK/darwin.log)"; tail -5 "$WORK/darwin.log"; fi
+fi
+CCSRC="$APPS_DIR/controlcenter-cocoa"
+if [ -f "$CCSRC/build-bsd.sh" ] && [ -d "$WORK/oss/sdk" ] && [ -d "$WORK/darwinator" ]; then
+	CCW="$WORK/ccw"; rm -rf "$CCW"; mkdir -p "$CCW"
+	IOKIT_DIR=$(pear_repo IOKit "$IOKIT_DIR") && CORETEXT_DIR=$(pear_repo CoreText "$CORETEXT_DIR") || true
+	put "$APPS_DIR" "$CCW/apps"
+	for l in "IOKit:$IOKIT_DIR" "CoreText:$CORETEXT_DIR" "SDK:$SDK_DIR" "QuartzCore:$QC_DIR" "SkyLight:$SKYLIGHT_DIR" "darwinator:$WORK/darwinator"; do [ -d "${l#*:}" ] && ln -s "${l#*:}" "$CCW/${l%%:*}"; done
+	if SDK_WORK="$WORK/oss" sh "$CCW/apps/controlcenter-cocoa/build-bsd.sh" "$WORK/cc-out" >"$WORK/cc.log" 2>&1 && [ -x "$WORK/cc-out/ControlCenter.app/Contents/MacOS/ControlCenter" ]; then
+		install -d "$ROOT/usr/libexec/pearos"; rm -rf "$ROOT/usr/libexec/pearos/ControlCenter.app"; cp -R "$WORK/cc-out/ControlCenter.app" "$ROOT/usr/libexec/pearos/ControlCenter.app"; echo "ControlCenter built"
+	else echo "NOTE: ControlCenter did not build (see $WORK/cc.log)"; tail -5 "$WORK/cc.log"; fi
+else echo "NOTE: ControlCenter not built (needs apps/controlcenter-cocoa, the open SDK and darwinator)"; fi
+for d in etc private/etc; do install -m 755 "$HERE/overlay/etc-rc.d-wsbsd_macstack" "$ROOT/$d/rc.d/wsbsd_macstack"; done
 for d in etc private/etc; do install -m 755 "$HERE/overlay/etc-rc.d-wsbsd_launchd" "$ROOT/$d/rc.d/wsbsd_launchd"; done
 for d in etc private/etc; do install -m 755 "$HERE/overlay/etc-rc.d-wsbsd_machrun" "$ROOT/$d/rc.d/wsbsd_machrun"; done
 for d in etc private/etc; do install -m 755 "$HERE/overlay/etc-rc.d-wsbsd_wifi" "$ROOT/$d/rc.d/wsbsd_wifi"; done

@@ -1,0 +1,47 @@
+#!/bin/sh
+# PROVIDE: wsbsd_macstack
+# REQUIRE: macdesktop wsbsd_launchd
+# KEYWORD: nojail shutdown
+# The Mach side of the desktop for the programs of the Mac, and our Control Center on it (github.com/pearOS-bsd/apps, controlcenter-cocoa).  Only when the Mac's frameworks are there (kern.darwinator.dyld=1: the owner's
+# dyld cache mounted) and the image carries the daemons (built by iso/build.sh into /usr/libexec/pearos): launchd is started again with the stand-ins that SkyLight's clients talk to (notifyd; wsbridge = the front of the
+# window server; carender-stub = the render server; lsd and a power service; cfprefsd of the Mac when it is there) and, when the session of an account is on the screen, the panel of Control Center.  Without the cache nothing
+# changes: the Control Center of the top bar (TopBar) stays.
+. /etc/rc.subr
+name="wsbsd_macstack"
+rcvar="wsbsd_macstack_enable"
+start_cmd="wsbsd_macstack_start"
+stop_cmd="wsbsd_macstack_stop"
+LIBX=/usr/libexec/pearos
+wsbsd_macstack_start()
+{
+	[ -x $LIBX/wsbridge ] && [ -x $LIBX/carender-stub ] && [ -x /sbin/launchd ] || return 0
+	[ -x $LIBX/ControlCenter.app/Contents/MacOS/ControlCenter ] || return 0
+	kldstat -q -m darwinator || return 0
+	[ -e /usr/lib/dyld ] && [ "$(sysctl -n kern.darwinator.dyld 2>/dev/null)" = 1 ] || return 0
+	[ -e /System/Library/dyld ] || [ -e /System/Library/Frameworks ] || return 0
+	( # in the background: the session has to be on the screen first, and the stack needs seconds to be ready (a panel started earlier waits for a reply that never comes)
+	  WS_SOCKET=/var/run/WindowServer.sock; export WS_SOCKET
+	  i=0; while [ $i -lt 90 ] && [ ! -S $WS_SOCKET ]; do sleep 1; i=$((i+1)); done
+	  [ -f /var/run/launchd.pid ] && kill "$(cat /var/run/launchd.pid)" 2>/dev/null; pkill -x launchd 2>/dev/null; sleep 1
+	  [ -x /usr/libexec/pearos/mkfolders.sh ] && /usr/libexec/pearos/mkfolders.sh 2>/dev/null
+	  CFD=""; [ -x /usr/sbin/cfprefsd ] && CFD="/usr/sbin/cfprefsd daemon /usr/sbin/cfprefsd agent"
+	  rm -f /tmp/WindowServer-ca.sock
+	  ( cd /tmp; exec /sbin/launchd /usr/sbin/notifyd $LIBX/wsbridge $CFD $LIBX/lsd-stub $LIBX/carender-stub "$LIBX/svc-stub com.apple.PowerManagement.control" ) >/var/log/launchd-stack.log 2>&1 &
+	  echo $! > /var/run/wsbsd_macstack.pid
+	  sleep 30
+	  # the account on the screen (macdesktop's supervisor writes its name)
+	  i=0; U=""; while [ $i -lt 120 ]; do U=$(cat /var/run/wsbsd.user 2>/dev/null); [ -n "$U" ] && break; sleep 1; i=$((i+1)); done
+	  [ -n "$U" ] || exit 0
+	  H=/Users/$U
+	  # CC_NO_SYSTEM_SERVICES: the daemons behind CoreWLAN, IOBluetooth, MediaRemote ... do not exist yet (a call into them never returns while holding dyld's lock); CC_LISTEN_ONLY: pearOS' event taps are listen-only
+	  daemon -u $U -f -o /var/log/ControlCenter.log env HOME=$H USER=$U LOGNAME=$U WS_SOCKET=$WS_SOCKET CC_NO_SYSTEM_SERVICES=1 CC_LISTEN_ONLY=1 /usr/lib/dyld $LIBX/ControlCenter.app/Contents/MacOS/ControlCenter
+	) &
+}
+wsbsd_macstack_stop()
+{
+	pkill -x ControlCenter 2>/dev/null
+	[ -f /var/run/wsbsd_macstack.pid ] && kill "$(cat /var/run/wsbsd_macstack.pid)" 2>/dev/null; rm -f /var/run/wsbsd_macstack.pid
+}
+load_rc_config $name
+: ${wsbsd_macstack_enable:=YES}
+run_rc_command "$1"
