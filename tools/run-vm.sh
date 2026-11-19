@@ -12,8 +12,11 @@ OVMF=$(ls /usr/share/OVMF/OVMF_CODE_4M.fd /usr/share/OVMF/OVMF_CODE.fd /usr/shar
 VARS="$WORK/vars.fd"; if [ ! -f "$VARS" ]; then for v in /usr/share/OVMF/OVMF_VARS_4M.fd /usr/share/OVMF/OVMF_VARS.fd /usr/share/edk2/ovmf/OVMF_VARS.fd; do [ -f $v ] && cp $v "$VARS" && break; done; [ -f "$VARS" ] || dd if=/dev/zero of="$VARS" bs=1k count=540 2>/dev/null; fi
 case "$(uname -s)" in Linux) ACCEL="-accel kvm -cpu host";; Darwin) ACCEL="-accel hvf -cpu host";; *) ACCEL="-accel tcg";; esac
 CACHEARGS=""; [ -n "$CACHE" ] && CACHEARGS="-drive if=none,id=c,file=$CACHE,format=raw,readonly=on -device virtio-blk-pci,drive=c"
+# the GPU: virtio-vga (vendor 1af4:1050): the image has a DRM/KMS driver for it (module virtio_gpu) and the window server follows the size of the window (dynamic resolution: resize the QEMU window and the
+# screen gets the new size); GL=1: virtio-vga-gl with the host's OpenGL (virgl: the OpenGL ES compositor).  "-vga std" (the old setting) has no resize: the guest keeps its size and QEMU scales the picture.
+VGA="-device virtio-vga"; DISPLAYARG="${DISPLAY_OPT:-gtk}"; [ -n "$GL" ] && { VGA="-device virtio-vga-gl"; DISPLAYARG="$DISPLAYARG,gl=on"; }
 # the image is read-only (the session lives in memory): snapshot=on keeps the ISO untouched
-exec qemu-system-x86_64 $ACCEL -m "${RAM:-6144}" -smp "${CPUS:-4}" -machine q35 -vga std -display "${DISPLAY_OPT:-gtk}" \
+exec qemu-system-x86_64 $ACCEL -m "${RAM:-6144}" -smp "${CPUS:-4}" -machine q35 -vga none $VGA -display "$DISPLAYARG" \
 	-drive if=pflash,format=raw,readonly=on,file="$OVMF" -drive if=pflash,format=raw,file="$VARS" \
 	-drive if=none,id=u,file="$ISO",format=raw,snapshot=on -device ich9-ahci,id=ahci -device ide-hd,drive=u,bus=ahci.0,bootindex=1 \
 	-device qemu-xhci -device usb-kbd -device usb-tablet $CACHEARGS \
