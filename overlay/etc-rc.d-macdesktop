@@ -6,6 +6,7 @@
 . /etc/rc.subr
 name="macdesktop"
 rcvar="macdesktop_enable"
+load_rc_config $name
 start_cmd="macdesktop_start"
 stop_cmd="macdesktop_stop"
 WS=/System/Library/PrivateFrameworks/SkyLight.framework/Versions/A/Resources/WindowServer
@@ -18,6 +19,8 @@ macdesktop_start()
 	esac
 	export WSD_SPLASH=1 WS_SOCKET=/var/run/WindowServer.sock HOME=/Users/root XDG_CURRENT_DESKTOP=Aqua XDG_SESSION_DESKTOP=Aqua XDG_SESSION_TYPE=WindowServer TERM=xterm-256color
 	[ -x /bin/zsh ] && export SHELL=/bin/zsh
+	# the table of messages of the SkyLight that Mach programs use (the one of the Mac the cache comes from): macdesktop_opset="26" for macOS 26.x; unset = the newest table (27).  Without the right one the transactions of such a program (window level, order) are refused (code 1001) and its windows stay at level 0
+	[ -n "$macdesktop_opset" ] && export WSD_OPSET=$macdesktop_opset
 	mkdir -p /var/run
 	# the image is read-only: the home of the session (preferences, GNUstep's caches and sockets) is memory
 	mount | grep -q ' /Users/Shared ' || mount -t tmpfs -o mode=1777 tmpfs /Users/Shared
