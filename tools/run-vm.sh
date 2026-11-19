@@ -18,4 +18,4 @@ exec qemu-system-x86_64 $ACCEL -m "${RAM:-6144}" -smp "${CPUS:-4}" -machine q35 
 	-drive if=none,id=u,file="$ISO",format=raw,snapshot=on -device ich9-ahci,id=ahci -device ide-hd,drive=u,bus=ahci.0,bootindex=1 \
 	-device qemu-xhci -device usb-kbd -device usb-tablet $CACHEARGS \
 	-netdev user,id=n0,hostfwd=tcp::"${SSHPORT:-2224}"-:22 -device virtio-net-pci,netdev=n0 \
-	-device intel-hda -device hda-duplex -audiodev none,id=snd0
+	-monitor unix:"$WORK/monitor.sock",server,nowait -audiodev none,id=snd0 -device intel-hda -device hda-duplex,audiodev=snd0

@@ -9,3 +9,6 @@ Builds the installer image of pearOS BSD.  `build.sh` (run as root on FreeBSD) f
 
 ## A VM with a window
 `sh tools/run-vm.sh pearOS.iso [cache.img]` starts the image in QEMU/KVM with a window (see the header of the script for the options): without the cache disk (the owner's Mac frameworks, made by `macdeps` from the owner's own Mac) it boots the GNUstep desktop, with it the Mac programs and the new Control Center.
+
+## A local build (minutes, not an hour)
+On a FreeBSD machine that already has the software installed (the GNUstep stack under /usr/local: any machine that built the image once): `git clone https://github.com/pearOS-bsd/iso && SKIP_SOFTWARE=1 WORK=/tmp/isowork OUT=$HOME/iso-out sh iso/build.sh` makes the ISO in about 7 minutes (the CI builds everything from scratch, about an hour).  `tools/run-vm.sh` runs it; `monitor.sock` in its work directory is the QEMU monitor (`screendump`, `mouse_move`, `mouse_button`).
