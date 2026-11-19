@@ -49,8 +49,12 @@ def pear_bits(inc):
     return w, h, bytes(out)
 
 def main():
-    kern = sys.argv[1]; dst = sys.argv[2] if len(sys.argv) > 2 else kern
-    inc = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'src', 'splash_pear.inc')
+    # patch_vt_logo.py KERNEL [OUT [SPLASH_PEAR.INC]]: the picture lives in the WindowServer repository (src/splash_pear.inc); SPLASH_PEAR_INC names it too
+    kern = sys.argv[1]; dst = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] else kern
+    here = os.path.dirname(os.path.abspath(__file__))
+    cands = [sys.argv[3] if len(sys.argv) > 3 else None, os.environ.get('SPLASH_PEAR_INC'), os.path.join(here, '..', '..', 'WindowServer', 'src', 'splash_pear.inc'), os.path.join(here, '..', '..', 'src', 'splash_pear.inc')]
+    inc = next((c for c in cands if c and os.path.exists(c)), None)
+    if not inc: print('patch_vt_logo: splash_pear.inc not found: the kernel is left as it is'); return 2
     f = bytearray(open(kern, 'rb').read()); syms, loads = elf_symbols(bytes(f))
     if len(syms) != 4: print('patch_vt_logo: the logo symbols are not all there (%s): the kernel is left as it is' % sorted(syms)); return 2
     off = {k: file_offset(loads, v[0]) for k, v in syms.items()}

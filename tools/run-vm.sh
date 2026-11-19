@@ -3,7 +3,7 @@
 #   PEAROS.iso   the image (a release of github.com/pearOS-bsd/iso, `xz -d` first)
 #   CACHE.img    the disk with the owner's Mac frameworks and dyld cache (made by macdeps from the owner's own Mac: Apple's files are never in the image);
 #                without it the VM boots the GNUstep desktop; with it the Mac programs run and the new Control Center starts (rc.d/wsbsd_macstack)
-# Environment: RAM (MB, default 6144), CPUS (default 4), SSHPORT (default 2224: ssh -p 2224 alex@localhost, password pear), DISPLAY_OPT (default gtk), WORK (default ~/.pear/vm)
+# Environment: SMBIOS (e.g. wsbsd-ci: the test mode: the account signs in by itself and ssh is up), RAM (MB, default 6144), CPUS (default 4), SSHPORT (default 2224: ssh -p 2224 alex@localhost, password pear), DISPLAY_OPT (default gtk), WORK (default ~/.pear/vm)
 set -e
 ISO="${1:?usage: run-vm.sh PEAROS.iso [CACHE.img]}"; CACHE="$2"
 WORK="${WORK:-$HOME/.pear/vm}"; mkdir -p "$WORK"
@@ -17,5 +17,5 @@ exec qemu-system-x86_64 $ACCEL -m "${RAM:-6144}" -smp "${CPUS:-4}" -machine q35 
 	-drive if=pflash,format=raw,readonly=on,file="$OVMF" -drive if=pflash,format=raw,file="$VARS" \
 	-drive if=none,id=u,file="$ISO",format=raw,snapshot=on -device ich9-ahci,id=ahci -device ide-hd,drive=u,bus=ahci.0,bootindex=1 \
 	-device qemu-xhci -device usb-kbd -device usb-tablet $CACHEARGS \
-	-netdev user,id=n0,hostfwd=tcp::"${SSHPORT:-2224}"-:22 -device virtio-net-pci,netdev=n0 \
+	${SMBIOS:+-smbios type=1,product=$SMBIOS} -netdev user,id=n0,hostfwd=tcp::"${SSHPORT:-2224}"-:22 -device virtio-net-pci,netdev=n0 \
 	-monitor unix:"$WORK/monitor.sock",server,nowait -audiodev none,id=snd0 -device intel-hda -device hda-duplex,audiodev=snd0

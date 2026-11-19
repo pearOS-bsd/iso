@@ -105,7 +105,7 @@ for s in base kernel; do
 	[ -f "$WORK/$s.txz" ] || fetch -q -o "$WORK/$s.txz" "https://download.freebsd.org/releases/$RELDIR/$REL/$s.txz" || fetch -q -o "$WORK/$s.txz" "https://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/$RELDIR/$REL/$s.txz"
 	tar -xpf "$WORK/$s.txz" --no-fflags -C "$ROOT"
 done
-python3 "$HERE/tools/patch_vt_logo.py" "$ROOT/boot/kernel/kernel" || echo "NOTE: the boot logo of the kernel was not changed"
+python3 "$HERE/tools/patch_vt_logo.py" "$ROOT/boot/kernel/kernel" "$ROOT/boot/kernel/kernel" "$WSRV_DIR/src/splash_pear.inc" || echo "NOTE: the boot logo of the kernel was not changed"
 rm -rf "$ROOT/usr/lib32" "$ROOT/usr/tests" "$ROOT/usr/share/doc" "$ROOT/usr/share/examples" "$ROOT/usr/share/games" "$ROOT/usr/share/man" "$ROOT/usr/share/info" "$ROOT/usr/include" "$ROOT/usr/lib/clang" "$ROOT/usr/share/dtrace" "$ROOT/usr/share/sendmail" "$ROOT/usr/share/openssl"
 rm -f "$ROOT"/usr/lib/*.a "$ROOT"/usr/lib/*_p.a "$ROOT"/usr/bin/clang* "$ROOT"/usr/bin/ld.lld "$ROOT"/usr/bin/lld* "$ROOT"/usr/bin/lldb* "$ROOT"/usr/bin/llvm-* "$ROOT"/usr/bin/c++ "$ROOT"/usr/bin/cc "$ROOT"/usr/bin/c89 "$ROOT"/usr/bin/c99 "$ROOT"/usr/bin/cpp "$ROOT"/usr/bin/CC "$ROOT"/usr/bin/ld "$ROOT"/usr/bin/ld.bfd "$ROOT"/usr/bin/ar "$ROOT"/usr/bin/ranlib
 
