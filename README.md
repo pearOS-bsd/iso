@@ -12,3 +12,8 @@ Builds the installer image of pearOS BSD.  `build.sh` (run as root on FreeBSD) f
 
 ## A local build (minutes, not an hour)
 On a FreeBSD machine that already has the software installed (the GNUstep stack under /usr/local: any machine that built the image once): `git clone https://github.com/pearOS-bsd/iso && SKIP_SOFTWARE=1 WORK=/tmp/isowork OUT=$HOME/iso-out sh iso/build.sh` makes the ISO in about 7 minutes (the CI builds everything from scratch, about an hour).  `tools/run-vm.sh` runs it; `monitor.sock` in its work directory is the QEMU monitor (`screendump`, `mouse_move`, `mouse_button`).
+
+## Findings of 2026-11-20 (VM with a window)
+* `-vga std` has no DRM driver and never resizes; `virtio-vga` gets the `virtio_gpu` driver (KMS, the OpenGL ES compositor on llvmpipe) and the window server follows the QEMU window (`WindowServer: display changed: WxH`).
+* On that machine the boot froze at "Feeding entropy" when the screen was the only console and `boot_mute` was on; with the serial port as a console too it boots.  Debugging aids: `tools/run-vm.sh` with `SERIAL=file:...` / the serial socket, `SSH_KEY` (a disk with `ssh.enable`: only on the AHCI controller, the image has no USB mass storage driver), the QEMU monitor socket.
+* The pear boot logo of the kernel: `tools/patch_vt_logo.py` looked for the picture in the old `wsbsd` layout; fixed.
