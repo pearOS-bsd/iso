@@ -1,0 +1,36 @@
+#!/bin/sh
+# PROVIDE: wsbsd_macdeps
+# REQUIRE: mountcritlocal wsbsd_machrun
+# BEFORE: wsbsd_launchd wsbsd_macstack macdesktop
+# KEYWORD: nojail
+# The owner's Mac files (never part of the image): the disk labelled MACCACHE (made by macdeps from the owner's own Mac: the dyld shared cache under Preboot/Cryptexes/OS/System/Library/dyld and, at the
+# root, `dyld`, the thin x86_64 slice of the Mac's /usr/lib/dyld).  When the disk is attached: it is mounted read-only on /System/Volumes, /System/Library gets the `dyld` link to the cache and /usr/lib the
+# Mac's dyld (both through nullfs over a tmpfs copy, the image itself is read-only), the kernel's Mach-O support is switched to its own dyld path (kern.darwinator.dyld=1) and the files of the Mac go to dyld
+# instead of machrun.  Without the disk nothing changes: the programs of the Mac that need the cache do not start, the rest of the desktop is the same.  (Found 2026-11-20: the image had none of this, so the
+# Control Center of the Mac side never started in the VM and the top bar's own panel, which has no Edit Controls, was the only one.)
+. /etc/rc.subr
+name="wsbsd_macdeps"
+rcvar="wsbsd_macdeps_enable"
+start_cmd="wsbsd_macdeps_start"
+stop_cmd=":"
+wsbsd_macdeps_start()
+{
+	D=/dev/msdosfs/MACCACHE
+	[ -e $D ] || return 0
+	kldstat -q -m darwinator || kldload darwinator 2>/dev/null || return 0
+	mkdir -p /System/Volumes
+	mount | grep -q " /System/Volumes " || mount -t msdosfs -o ro $D /System/Volumes || return 0
+	[ -f /System/Volumes/dyld ] && [ -d /System/Volumes/Preboot/Cryptexes/OS/System/Library/dyld ] || { echo "wsbsd_macdeps: the cache disk has no dyld or no shared cache"; return 0; }
+	mkdir -p /tmp/big && mount -t tmpfs -o size=900m tmpfs /tmp/big || return 0
+	mkdir -p /tmp/big/sl /tmp/big/ul
+	cp -a /System/Library/. /tmp/big/sl/ && cp -a /usr/lib/. /tmp/big/ul/ || return 0
+	ln -sf /System/Volumes/Preboot/Cryptexes/OS/System/Library/dyld /tmp/big/sl/dyld
+	install -m 755 /System/Volumes/dyld /tmp/big/ul/dyld
+	mount -t nullfs /tmp/big/sl /System/Library && mount -t nullfs /tmp/big/ul /usr/lib || return 0
+	sysctl kern.darwinator.dyld=1 kern.darwinator.two_volumes=2 kern.darwinator.fast_sleep_ms=5 >/dev/null
+	binmiscctl disable macho64 >/dev/null 2>&1; binmiscctl disable machofat >/dev/null 2>&1
+	echo "wsbsd_macdeps: the Mac's dyld and shared cache are in place"
+}
+load_rc_config $name
+: ${wsbsd_macdeps_enable:=YES}
+run_rc_command "$1"

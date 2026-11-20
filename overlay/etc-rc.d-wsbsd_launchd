@@ -1,6 +1,6 @@
 #!/bin/sh
 # PROVIDE: wsbsd_launchd
-# REQUIRE: mountcritlocal wsbsd_machrun
+# REQUIRE: mountcritlocal wsbsd_machrun wsbsd_macdeps
 # BEFORE: LOGIN
 # KEYWORD: nojail shutdown
 # The launchd of pearOS (github.com/pearOS-bsd/d, darwin/launchd/): a Mach-O program that serves the bootstrap port of the system, like the launchd of a Mac: the services that Mac programs ask

@@ -251,6 +251,7 @@ else echo "NOTE: ControlCenter not built (needs apps/controlcenter-cocoa, the op
 for d in etc private/etc; do install -m 755 "$HERE/overlay/etc-rc.d-wsbsd_macstack" "$ROOT/$d/rc.d/wsbsd_macstack"; done
 for d in etc private/etc; do install -m 755 "$HERE/overlay/etc-rc.d-wsbsd_launchd" "$ROOT/$d/rc.d/wsbsd_launchd"; done
 for d in etc private/etc; do install -m 755 "$HERE/overlay/etc-rc.d-wsbsd_machrun" "$ROOT/$d/rc.d/wsbsd_machrun"; done
+for d in etc private/etc; do install -m 755 "$HERE/overlay/etc-rc.d-wsbsd_macdeps" "$ROOT/$d/rc.d/wsbsd_macdeps"; done
 for d in etc private/etc; do install -m 755 "$HERE/overlay/etc-rc.d-wsbsd_wifi" "$ROOT/$d/rc.d/wsbsd_wifi"; done
 for d in etc private/etc; do install -m 755 "$HERE/overlay/etc-rc.d-wsbsd_bluetooth" "$ROOT/$d/rc.d/wsbsd_bluetooth"; done
 for d in etc private/etc; do install -m 755 "$HERE/overlay/etc-rc.d-wsbsd_gpu" "$ROOT/$d/rc.d/wsbsd_gpu"; done
