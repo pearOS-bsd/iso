@@ -26,6 +26,8 @@ wsbsd_macdeps_start()
 	cp -a /System/Library/. /tmp/big/sl/ && cp -a /usr/lib/. /tmp/big/ul/ || return 0
 	ln -sf /System/Volumes/Preboot/Cryptexes/OS/System/Library/dyld /tmp/big/sl/dyld
 	install -m 755 /System/Volumes/dyld /tmp/big/ul/dyld
+	# the agents start their programs through /usr/lib/dyld (the ELF launcher of the image): the Mac's dyld cannot start our ELF programs, and the kernel starts a Mach-O one by itself now
+	for f in /tmp/big/sl/LaunchAgents/*.plist; do [ -f "$f" ] && sed -i '' 's#<string>/usr/lib/dyld</string>##' "$f"; done
 	mount -t nullfs /tmp/big/sl /System/Library && mount -t nullfs /tmp/big/ul /usr/lib || return 0
 	sysctl kern.darwinator.dyld=1 kern.darwinator.two_volumes=2 kern.darwinator.fast_sleep_ms=5 >/dev/null
 	binmiscctl disable macho64 >/dev/null 2>&1; binmiscctl disable machofat >/dev/null 2>&1
