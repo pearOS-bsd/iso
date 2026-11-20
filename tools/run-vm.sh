@@ -15,7 +15,7 @@ case "$(uname -s)" in Linux) ACCEL="-accel kvm -cpu host";; Darwin) ACCEL="-acce
 CACHEARGS=""; [ -n "$CACHE" ] && CACHEARGS="-drive if=none,id=c,file=$CACHE,format=raw,readonly=on -device virtio-blk-pci,drive=c"
 # the GPU: virtio-vga (vendor 1af4:1050): the image has a DRM/KMS driver for it (module virtio_gpu) and the window server follows the size of the window (dynamic resolution: resize the QEMU window and the
 # screen gets the new size); GL=1: virtio-vga-gl with the host's OpenGL (virgl: the OpenGL ES compositor).  "-vga std" (the old setting) has no resize: the guest keeps its size and QEMU scales the picture.
-VGA="-vga none -device virtio-vga"; DISPLAYARG="${DISPLAY_OPT:-gtk}"; [ -n "$GL" ] && { VGA="-vga none -device virtio-vga-gl"; DISPLAYARG="$DISPLAYARG,gl=on"; }
+VGA="-vga none -device virtio-vga${RES:+,xres=${RES%x*},yres=${RES#*x}}"; DISPLAYARG="${DISPLAY_OPT:-gtk}"; [ -n "$GL" ] && { VGA="-vga none -device virtio-vga-gl"; DISPLAYARG="$DISPLAYARG,gl=on"; }
 SSHARGS=""
 if [ -n "$SSH_KEY" ]; then
 	command -v mformat >/dev/null && command -v mcopy >/dev/null || { echo "SSH_KEY needs mformat and mcopy (mtools)"; exit 1; }
