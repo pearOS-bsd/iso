@@ -4,6 +4,8 @@
 # KEYWORD: shutdown
 # The desktop: the window server on the console framebuffer, then the login-less session (Terminal). Silent: kernel messages are muted so that nothing is drawn over the screen.
 . /etc/rc.subr
+# /usr/lib/dyld is the ELF launcher of the image, or the Mac'"'"'s own dyld (a Mach-O, put there by wsbsd_macdeps) that cannot start our GNUstep programs: then they are started directly
+DYLD=/usr/lib/dyld; [ "$(head -c4 $DYLD 2>/dev/null | tail -c3)" = ELF ] || DYLD=""
 name="macdesktop"
 rcvar="macdesktop_enable"
 load_rc_config $name
@@ -91,7 +93,7 @@ macdesktop_start()
 		else
 			echo $$ > $SD/launchd.$U.pid
 			for app in /System/Library/CoreServices/Dock.app/Contents/MacOS/Dock /System/Library/CoreServices/SystemUIServer.app/Contents/MacOS/SystemUIServer /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder /System/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal; do
-				[ -x $app ] && daemon -u $U -f -o /var/log/$(basename $app).log env HOME=$H USER=$U LOGNAME=$U /usr/lib/dyld $app
+				[ -x $app ] && daemon -u $U -f -o /var/log/$(basename $app).log env HOME=$H USER=$U LOGNAME=$U $DYLD $app
 			done
 		fi
 		# the session lasts until its launchd ends (Log Out stops it): then what the account still runs is killed and the session is gone
@@ -102,7 +104,7 @@ macdesktop_start()
 	( while true; do
 		echo > $SD/console
 		if [ "$(kenv -q smbios.system.product 2>/dev/null)" = wsbsd-ci ] || [ ! -x $LW ]; then U=alex; id alex >/dev/null 2>&1 || U=root
-		else mkdir -p /Users/root/GNUstep /Users/root/Library/Preferences; U=$(HOME=/Users/root /usr/lib/dyld $LW 2>>/var/log/loginwindow.log | tail -1); fi       # root has no home yet: GNUstep needs /Users/root/GNUstep (without it the login window exited at once and the screen stayed on the boot logo)
+		else mkdir -p /Users/root/GNUstep /Users/root/Library/Preferences; U=$(HOME=/Users/root $DYLD $LW 2>>/var/log/loginwindow.log | tail -1); fi       # root has no home yet: GNUstep needs /Users/root/GNUstep (without it the login window exited at once and the screen stayed on the boot logo)
 		[ -n "$U" ] && id "$U" >/dev/null 2>&1 || { sleep 2; continue; }
 		N=$(id -u $U)
 		session_alive $U || session_start $U
@@ -113,7 +115,7 @@ macdesktop_start()
 		while session_alive $U; do
 			for f in $SD/login.$N $SD/lock.$N; do [ -e $f ] && [ "$(stat -f %u $f)" != $N ] && rm -f $f; done
 			if [ -e $SD/login.$N ]; then rm -f $SD/login.$N; break; fi
-			if [ -e $SD/lock.$N ] && [ -x $LW ]; then rm -f $SD/lock.$N; HOME=/Users/root /usr/lib/dyld $LW --lock $U >/dev/null 2>>/var/log/loginwindow.log; [ $? = 3 ] && break; fi
+			if [ -e $SD/lock.$N ] && [ -x $LW ]; then rm -f $SD/lock.$N; HOME=/Users/root $DYLD $LW --lock $U >/dev/null 2>>/var/log/loginwindow.log; [ $? = 3 ] && break; fi
 			sleep 1
 		done
 	done ) >/var/log/session.log 2>&1 &
@@ -125,7 +127,7 @@ macdesktop_start()
 	  [ -x /usr/local/bin/wswins ] && { echo "== wswins"; WS_SOCKET=/var/run/WindowServer.sock timeout 5 /usr/local/bin/wswins 2>&1 | head -20; }
 	  echo "== messages"; tail -15 /var/log/messages 2>/dev/null; echo "== deep report end"; } > /dev/ttyu0 2>/dev/null ) &
 	# a report on the serial port (if there is one), 25 s after the start: the programs of the desktop that run, and the end of the log of the Finder and of every program that does not (the screen is the window server's and the console is muted)
-	( sleep 25; { echo "== desktop report"; echo "== session.log"; tail -15 /var/log/session.log 2>/dev/null; echo "== loginwindow.log"; tail -8 /var/log/loginwindow.log 2>/dev/null; echo "== Dock by hand"; U=$(cat /var/run/wsbsd.user 2>/dev/null); su -m "${U:-root}" -c "env HOME=/Users/${U:-root} timeout 6 /usr/lib/dyld /System/Library/CoreServices/Dock.app/Contents/MacOS/Dock" 2>&1 | tail -15; echo "== launchd.log"; tail -15 /var/log/launchd.*.log 2>/dev/null; ps ax -o pid,stat,command | grep -E "launchd|loginwindow" | grep -v grep; ps ax -o pid,stat,command | grep -E "WindowServer|Dock|SystemUIServer|Finder|Terminal|usernoted|gdnc|gdomap" | grep -v grep; for a in Finder WindowServer Dock SystemUIServer Terminal; do pgrep -f "$a" >/dev/null 2>&1 || echo "== $a is not running"; echo "== tail of $a.log"; tail -12 /var/log/$a.log 2>/dev/null; done; ls /System/Library/Desktop\ Pictures 2>&1; } > /dev/ttyu0 2>/dev/null ) &
+	( sleep 25; { echo "== desktop report"; echo "== session.log"; tail -15 /var/log/session.log 2>/dev/null; echo "== loginwindow.log"; tail -8 /var/log/loginwindow.log 2>/dev/null; echo "== Dock by hand"; U=$(cat /var/run/wsbsd.user 2>/dev/null); su -m "${U:-root}" -c "env HOME=/Users/${U:-root} timeout 6 $DYLD /System/Library/CoreServices/Dock.app/Contents/MacOS/Dock" 2>&1 | tail -15; echo "== launchd.log"; tail -15 /var/log/launchd.*.log 2>/dev/null; ps ax -o pid,stat,command | grep -E "launchd|loginwindow" | grep -v grep; ps ax -o pid,stat,command | grep -E "WindowServer|Dock|SystemUIServer|Finder|Terminal|usernoted|gdnc|gdomap" | grep -v grep; for a in Finder WindowServer Dock SystemUIServer Terminal; do pgrep -f "$a" >/dev/null 2>&1 || echo "== $a is not running"; echo "== tail of $a.log"; tail -12 /var/log/$a.log 2>/dev/null; done; ls /System/Library/Desktop\ Pictures 2>&1; } > /dev/ttyu0 2>/dev/null ) &
 }
 macdesktop_stop()
 {
