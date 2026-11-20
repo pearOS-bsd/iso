@@ -30,11 +30,12 @@ wsbsd_macstack_start()
 	  echo $! > /var/run/wsbsd_macstack.pid
 	  sleep 30
 	  # the account on the screen (macdesktop's supervisor writes its name)
-	  i=0; U=""; while [ $i -lt 120 ]; do U=$(cat /var/run/wsbsd.user 2>/dev/null); [ -n "$U" ] && break; sleep 1; i=$((i+1)); done
+	  i=0; U=""; while true; do U=$(cat /var/run/wsbsd.user 2>/dev/null); [ -n "$U" ] && break; sleep 2; done      # as long as it takes: the account may log in minutes after the boot
 	  [ -n "$U" ] || exit 0
 	  H=/Users/$U
+	  CCRUN=/usr/lib/dyld; [ "$(head -c4 $CCRUN 2>/dev/null | tail -c3)" = ELF ] || CCRUN=""      # the Mac's own dyld is not started like a program: the kernel runs a Mach-O file through it
 	  # CC_NO_SYSTEM_SERVICES: the daemons behind CoreWLAN, IOBluetooth, MediaRemote ... do not exist yet (a call into them never returns while holding dyld's lock); CC_LISTEN_ONLY: pearOS' event taps are listen-only
-	  daemon -u $U -f -o /var/log/ControlCenter.log env HOME=$H USER=$U LOGNAME=$U WS_SOCKET=$WS_SOCKET CC_NO_SYSTEM_SERVICES=1 CC_LISTEN_ONLY=1 CC_NO_STATUSBAR=1 /usr/lib/dyld $LIBX/ControlCenter.app/Contents/MacOS/ControlCenter
+	  daemon -u $U -f -o /var/log/ControlCenter.log env HOME=$H USER=$U LOGNAME=$U WS_SOCKET=$WS_SOCKET CC_NO_SYSTEM_SERVICES=1 CC_LISTEN_ONLY=1 CC_NO_STATUSBAR=1 $CCRUN $LIBX/ControlCenter.app/Contents/MacOS/ControlCenter; touch /var/run/wsbsd_cc_active      # the top bar does not open a panel of its own then: this one answers the click
 	) &
 }
 wsbsd_macstack_stop()
