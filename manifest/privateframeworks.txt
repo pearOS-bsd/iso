@@ -4213,6 +4213,35 @@ l 755 /System/Library/PrivateFrameworks/CoreUI.framework/Resources -> Versions/C
 d 755 /System/Library/PrivateFrameworks/CoreUI.framework/Versions
 d 755 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A
 l 755 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/Current -> A
+d 755 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/_CodeSignature
+f 644 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/_CodeSignature/CodeResources
+d 755 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources
+f 644 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/default.metallib
+d 755 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle
+d 755 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents
+d 755 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents/_CodeSignature
+f 644 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents/_CodeSignature/CodeResources
+f 644 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents/Info.plist
+d 755 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents/MacOS
+f 755 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents/MacOS/DesignLibrary-macOS
+d 755 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents/Resources
+d 755 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents/Resources/macOSRepositories
+f 644 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents/Resources/macOSRepositories/DarkFauxVibrantStandard.car
+f 644 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents/Resources/macOSRepositories/DarkIncreasedContrast.car
+f 644 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents/Resources/macOSRepositories/DarkStandard.car
+f 644 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents/Resources/macOSRepositories/DarkVibrantIncreasedContrast.car
+f 644 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents/Resources/macOSRepositories/DarkVibrantStandard.car
+f 644 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents/Resources/macOSRepositories/LightFauxVibrantStandard.car
+f 644 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents/Resources/macOSRepositories/LightIncreasedContrast.car
+f 644 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents/Resources/macOSRepositories/LightStandard.car
+f 644 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents/Resources/macOSRepositories/LightVibrantIncreasedContrast.car
+f 644 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents/Resources/macOSRepositories/LightVibrantStandard.car
+d 755 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents/Resources/macTouchBarRepositories
+f 644 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents/Resources/macTouchBarRepositories/DarkStandard.car
+f 644 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DesignLibrary-macOS.bundle/Contents/version.plist
+f 644 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/DuplicateImageNames.plist
+f 644 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/Info.plist
+f 644 /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/Resources/version.plist
 d 755 /System/Library/PrivateFrameworks/CoreUSDEdit.framework
 l 755 /System/Library/PrivateFrameworks/CoreUSDEdit.framework/CoreUSDEdit -> Versions/Current/CoreUSDEdit
 l 755 /System/Library/PrivateFrameworks/CoreUSDEdit.framework/Libraries -> Versions/A/Libraries

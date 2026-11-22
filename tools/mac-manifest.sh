@@ -15,6 +15,9 @@ emit() {   # emit <root> <maxdepth> : the tree below root, to that depth
 emit /System 3 | grep -v '^[dfl] [0-7]* /System/Volumes' > "$OUT/system.txt"
 emit /System/Library/Frameworks 6 > "$OUT/frameworks.txt"
 emit /System/Library/PrivateFrameworks 3 > "$OUT/privateframeworks.txt"
+# deeper trees that programs need at run time: CoreUI's DesignLibrary-macOS.bundle holds the system colours that SwiftUI resolves (Color.red, .primary ... are clear without it)
+emit /System/Library/PrivateFrameworks/CoreUI.framework 8 | grep -v '^d [0-7]* /System/Library/PrivateFrameworks/CoreUI.framework$' >> "$OUT/privateframeworks.txt"
+sort -u -k3 "$OUT/privateframeworks.txt" -o "$OUT/privateframeworks.txt"
 emit /System/Library/CoreServices 3 > "$OUT/coreservices.txt"
 emit /System/Applications 3 > "$OUT/system-applications.txt"
 emit /usr/lib 2 > "$OUT/usr-lib.txt"
