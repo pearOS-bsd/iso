@@ -108,7 +108,7 @@ def install(root, manifest, comp_file):
         for t, mode, path, target in links:
             d = dest(root, path)
             src = os.path.normpath(os.path.join(os.path.dirname(d), target)) if not target.startswith("/") else dest(root, target)
-            if os.path.lexists(d): continue
+            if os.path.lexists(d) and not (os.path.isdir(d) and os.path.isdir(src) and not os.path.islink(d)): continue
             if not os.path.exists(src): left.append((t, mode, path, target)); continue
             copy_real(src, d); placed += 1
         if len(left) == len(links) or not left: break
@@ -142,6 +142,12 @@ def verify(root, manifest):
         print("SYMLINKS (%d), for example:" % len(links)); [print("  " + l) for l in links[:15]]; bad = 1
     dirs = [(p) for t, _, p, _ in all_entries(manifest) if t == "d"]
     missing = [p for p in dirs if not os.path.isdir(dest(root, p))]
+    incomplete = []
+    for dp, dn, fn in os.walk(root):
+        if dp.endswith(".framework") and os.path.isdir(os.path.join(dp, "Versions", "Current", "Resources")) and os.path.isdir(os.path.join(dp, "Resources")):
+            a = set(os.listdir(os.path.join(dp, "Resources"))); b = set(os.listdir(os.path.join(dp, "Versions", "Current", "Resources")))
+            if b - a: incomplete.append("%s: %d files of Versions/Current/Resources missing in Resources (e.g. %s)" % (dp[len(root):], len(b - a), sorted(b - a)[0]))
+    if incomplete: print("INCOMPLETE framework Resources (CoreUI looks up Assets.car there, the symlinks of the Mac became copies):"); [print("  " + x) for x in incomplete[:15]]; bad = 1
     print("directories of the Mac manifest: %d, present: %d" % (len(dirs), len(dirs) - len(missing)))
     if missing: print("MISSING directories, for example:"); [print("  " + m) for m in missing[:15]]; bad = 1
     files = [(p) for t, _, p, _ in all_entries(manifest) if t in ("f", "l") and "/Versions/" not in p.replace("/Versions/Current", "") or False]
