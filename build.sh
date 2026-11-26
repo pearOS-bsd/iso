@@ -142,6 +142,7 @@ python3 "$HERE/tools/macfs.py" install "$ROOT" "$HERE/manifest" "$HERE/component
 rm -rf "$ROOT/Library/User Template"; python3 "$HERE/tools/mkdemo.py" "$ROOT/Library/User Template" || echo "NOTE: the demo content was not made"; : > "$ROOT/Library/User Template/.zshrc"
 # /private/{etc,var,tmp} next to /etc /var /tmp (the Mac has the first as the real places and the others as links; here both are real)
 mkdir -p "$ROOT/private/etc" "$ROOT/private/var" "$ROOT/private/tmp" "$ROOT/Users/Shared" "$ROOT/Users/root"
+mkdir -p "$ROOT/Library/Caches"		# a memory file system at boot (rc.d/wsbsd_overlay): the Mac services write there
 cp -R "$ROOT/etc/." "$ROOT/private/etc/"
 
 echo "== 5. configuration: silent boot, desktop on start"
@@ -249,6 +250,13 @@ if [ -f "$CCSRC/build-bsd.sh" ] && [ -d "$WORK/oss/sdk" ] && [ -d "$WORK/darwina
 		install -d "$ROOT/usr/libexec/pearos"; rm -rf "$ROOT/usr/libexec/pearos/ControlCenter.app"; cp -R "$WORK/cc-out/ControlCenter.app" "$ROOT/usr/libexec/pearos/ControlCenter.app"; echo "ControlCenter built"
 	else echo "NOTE: ControlCenter did not build (see $WORK/cc.log)"; tail -5 "$WORK/cc.log"; fi
 else echo "NOTE: ControlCenter not built (needs apps/controlcenter-cocoa, the open SDK and darwinator)"; fi
+# lsd (github.com/pearOS-bsd/LaunchServices): the Launch Services database daemon (com.apple.lsd.mapdb), wire-compatible with the Mac's; rc.d/wsbsd_macstack starts it before every client
+if [ -f "$LS_DIR/build-bsd.sh" ] && [ -d "$WORK/oss/sdk" ] && [ -d "$WORK/darwinator" ]; then
+	LSW="$WORK/lsw"; rm -rf "$LSW"; mkdir -p "$LSW"; put "$LS_DIR" "$LSW/LaunchServices"; ln -s "$WORK/darwinator" "$LSW/darwinator"
+	if SDK_WORK="$WORK/oss" sh "$LSW/LaunchServices/build-bsd.sh" "$WORK/ls-out" >"$WORK/ls.log" 2>&1 && [ -x "$WORK/ls-out/lsd" ]; then
+		install -d "$ROOT/usr/libexec/pearos"; install -m 755 "$WORK/ls-out/lsd" "$ROOT/usr/libexec/pearos/lsd"; echo "lsd built"
+	else echo "NOTE: lsd did not build (see $WORK/ls.log)"; tail -5 "$WORK/ls.log"; fi
+fi
 # IconServices (github.com/pearOS-bsd/IconServices): iconservicesagent (com.apple.iconservices) and iconservicesd (com.apple.iconservices.store), wire-compatible with the Mac's; rc.d/wsbsd_macstack starts them with the stack
 if [ -f "$IS_DIR/build-bsd.sh" ] && [ -d "$WORK/oss/sdk" ] && [ -d "$WORK/darwinator" ]; then
 	ISW="$WORK/isw"; rm -rf "$ISW"; mkdir -p "$ISW"; put "$IS_DIR" "$ISW/IconServices"; ln -s "$WORK/darwinator" "$ISW/darwinator"

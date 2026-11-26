@@ -24,7 +24,7 @@ wsbsd_macstack_start()
 	  i=0; while [ $i -lt 90 ] && [ ! -S $WS_SOCKET ]; do sleep 1; i=$((i+1)); done
 	  [ -f /var/run/launchd.pid ] && kill "$(cat /var/run/launchd.pid)" 2>/dev/null; pkill -x launchd 2>/dev/null; sleep 1
 	  [ -x /usr/libexec/pearos/mkfolders.sh ] && /usr/libexec/pearos/mkfolders.sh 2>/dev/null
-	  CFP=/usr/sbin/cfprefsd; [ -x $CFP ] || CFP=/tmp/big/cfprefsd; set -- /usr/sbin/notifyd $LIBX/wsbridge; [ -x $CFP ] && set -- "$@" "$CFP daemon" "$CFP agent"; set -- "$@" $LIBX/lsd-stub $LIBX/carender-stub "$LIBX/svc-stub com.apple.PowerManagement.control"; for p in iconservicesd iconservicesagent; do [ -x $LIBX/$p ] && set -- "$@" $LIBX/$p; done      # IconServices: before the Dock and every client of icons (iconservicesd first: the agent stores through it)      # each program with its arguments is one word (launchd splits them)
+	  CFP=/usr/sbin/cfprefsd; [ -x $CFP ] || CFP=/tmp/big/cfprefsd; set -- /usr/sbin/notifyd $LIBX/wsbridge; [ -x $CFP ] && set -- "$@" "$CFP daemon" "$CFP agent"; set -- "$@" $LIBX/lsd-stub $LIBX/carender-stub "$LIBX/svc-stub com.apple.PowerManagement.control"; for p in lsd iconservicesd iconservicesagent; do [ -x $LIBX/$p ] && set -- "$@" $LIBX/$p; done      # lsd (the Launch Services database: every client asks it first), then IconServices (iconservicesd first: the agent stores through it), before the Dock and every client of icons      # each program with its arguments is one word (launchd splits them)
 	  ( cd /tmp; exec /sbin/launchd "$@" ) >/var/log/launchd-stack.log 2>&1 &
 	  echo $! > /var/run/wsbsd_macstack.pid
 	  sleep 30

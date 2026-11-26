@@ -20,6 +20,8 @@ wsbsd_overlay_start()
 	sysctl -q kern.coredump=0	# a crashing Mac program would write a core file of 500 MB into /var, which is memory
 	[ -s /var/run/resolv.conf ] || printf 'nameserver 10.0.2.3\nnameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /var/run/resolv.conf
 	mount | grep -q " on /Volumes " || mount -t tmpfs -o mode=1777 tmpfs /Volumes 2>/dev/null
+	# /Library/Caches is written by the services of the Mac (iconservicesd: com.apple.iconservices.store); drwxrwxrwt like the Mac's, in memory: the medium is read-only
+	[ -d /Library/Caches ] && ! mount | grep -q " on /Library/Caches " && mount -t tmpfs -o mode=1777 tmpfs /Library/Caches 2>/dev/null
 }
 wsbsd_overlay_writable()
 {
