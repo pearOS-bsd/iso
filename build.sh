@@ -254,14 +254,14 @@ else echo "NOTE: ControlCenter not built (needs apps/controlcenter-cocoa, the op
 if [ -f "$LS_DIR/build-bsd.sh" ] && [ -d "$WORK/oss/sdk" ] && [ -d "$WORK/darwinator" ]; then
 	LSW="$WORK/lsw"; rm -rf "$LSW"; mkdir -p "$LSW"; put "$LS_DIR" "$LSW/LaunchServices"; ln -s "$WORK/darwinator" "$LSW/darwinator"
 	if SDK_WORK="$WORK/oss" sh "$LSW/LaunchServices/build-bsd.sh" "$WORK/ls-out" >"$WORK/ls.log" 2>&1 && [ -x "$WORK/ls-out/lsd" ]; then
-		install -d "$ROOT/usr/libexec/pearos"; install -m 755 "$WORK/ls-out/lsd" "$ROOT/usr/libexec/pearos/lsd"; echo "lsd built"
+		install -d "$ROOT/usr/libexec/pearos/jobs"; install -m 755 "$WORK/ls-out/lsd" "$ROOT/usr/libexec/pearos/lsd"; install -m 644 "$LS_DIR"/launchd/*.plist "$ROOT/usr/libexec/pearos/jobs/"; echo "lsd built"
 	else echo "NOTE: lsd did not build (see $WORK/ls.log)"; tail -5 "$WORK/ls.log"; fi
 fi
 # IconServices (github.com/pearOS-bsd/IconServices): iconservicesagent (com.apple.iconservices) and iconservicesd (com.apple.iconservices.store), wire-compatible with the Mac's; rc.d/wsbsd_macstack starts them with the stack
 if [ -f "$IS_DIR/build-bsd.sh" ] && [ -d "$WORK/oss/sdk" ] && [ -d "$WORK/darwinator" ]; then
 	ISW="$WORK/isw"; rm -rf "$ISW"; mkdir -p "$ISW"; put "$IS_DIR" "$ISW/IconServices"; ln -s "$WORK/darwinator" "$ISW/darwinator"
 	if SDK_WORK="$WORK/oss" sh "$ISW/IconServices/build-bsd.sh" "$WORK/is-out" >"$WORK/is.log" 2>&1 && [ -x "$WORK/is-out/iconservicesagent" ] && [ -x "$WORK/is-out/iconservicesd" ]; then
-		install -d "$ROOT/usr/libexec/pearos"; install -m 755 "$WORK/is-out/iconservicesagent" "$WORK/is-out/iconservicesd" "$ROOT/usr/libexec/pearos/"; echo "IconServices built"
+		install -d "$ROOT/usr/libexec/pearos"; install -m 755 "$WORK/is-out/iconservicesagent" "$WORK/is-out/iconservicesd" "$ROOT/usr/libexec/pearos/"; install -d "$ROOT/usr/libexec/pearos/jobs"; install -m 644 "$IS_DIR"/launchd/*.plist "$ROOT/usr/libexec/pearos/jobs/"; echo "IconServices built"
 	else echo "NOTE: IconServices did not build (see $WORK/is.log)"; tail -5 "$WORK/is.log"; fi
 else echo "NOTE: IconServices not built (needs the IconServices repository, the open SDK and darwinator)"; fi
 for d in etc private/etc; do install -m 755 "$HERE/overlay/etc-rc.d-wsbsd_macstack" "$ROOT/$d/rc.d/wsbsd_macstack"; done
