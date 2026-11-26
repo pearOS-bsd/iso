@@ -28,6 +28,7 @@ WSRV_DIR=$(pear_repo WindowServer "$WINDOWSERVER_DIR") || exit 1;         APPKIT
 OPEN_DIR=$(pear_repo open "$OPEN_DIR") || exit 1;                         SDK_DIR=$(pear_repo SDK "$SDK_DIR") || exit 1
 QC_DIR=$(pear_repo QuartzCore "$QUARTZCORE_DIR") || exit 1;               COREUI_DIR=$(pear_repo CoreUI "$COREUI_DIR") || exit 1
 LS_DIR=$(pear_repo LaunchServices "$LAUNCHSERVICES_DIR") || exit 1;       APPS_DIR=$(pear_repo apps "$APPS_DIR") || exit 1
+IS_DIR=$(pear_repo IconServices "$ICONSERVICES_DIR") || exit 1
 export SKYLIGHT_DIR D_DIR; export WINDOWSERVER_DIR="$WSRV_DIR"
 # the workspace: the layout the build scripts were written for (wsbsd/<module>, the programs next to it), made of links to the repositories
 W="$WORK/ws"; rm -rf "$W"; mkdir -p "$W/wsbsd"; WS="$W/wsbsd"; export GITHUB_WORKSPACE="$W"
@@ -248,6 +249,13 @@ if [ -f "$CCSRC/build-bsd.sh" ] && [ -d "$WORK/oss/sdk" ] && [ -d "$WORK/darwina
 		install -d "$ROOT/usr/libexec/pearos"; rm -rf "$ROOT/usr/libexec/pearos/ControlCenter.app"; cp -R "$WORK/cc-out/ControlCenter.app" "$ROOT/usr/libexec/pearos/ControlCenter.app"; echo "ControlCenter built"
 	else echo "NOTE: ControlCenter did not build (see $WORK/cc.log)"; tail -5 "$WORK/cc.log"; fi
 else echo "NOTE: ControlCenter not built (needs apps/controlcenter-cocoa, the open SDK and darwinator)"; fi
+# IconServices (github.com/pearOS-bsd/IconServices): iconservicesagent (com.apple.iconservices) and iconservicesd (com.apple.iconservices.store), wire-compatible with the Mac's; rc.d/wsbsd_macstack starts them with the stack
+if [ -f "$IS_DIR/build-bsd.sh" ] && [ -d "$WORK/oss/sdk" ] && [ -d "$WORK/darwinator" ]; then
+	ISW="$WORK/isw"; rm -rf "$ISW"; mkdir -p "$ISW"; put "$IS_DIR" "$ISW/IconServices"; ln -s "$WORK/darwinator" "$ISW/darwinator"
+	if SDK_WORK="$WORK/oss" sh "$ISW/IconServices/build-bsd.sh" "$WORK/is-out" >"$WORK/is.log" 2>&1 && [ -x "$WORK/is-out/iconservicesagent" ] && [ -x "$WORK/is-out/iconservicesd" ]; then
+		install -d "$ROOT/usr/libexec/pearos"; install -m 755 "$WORK/is-out/iconservicesagent" "$WORK/is-out/iconservicesd" "$ROOT/usr/libexec/pearos/"; echo "IconServices built"
+	else echo "NOTE: IconServices did not build (see $WORK/is.log)"; tail -5 "$WORK/is.log"; fi
+else echo "NOTE: IconServices not built (needs the IconServices repository, the open SDK and darwinator)"; fi
 for d in etc private/etc; do install -m 755 "$HERE/overlay/etc-rc.d-wsbsd_macstack" "$ROOT/$d/rc.d/wsbsd_macstack"; done
 for d in etc private/etc; do install -m 755 "$HERE/overlay/etc-rc.d-wsbsd_launchd" "$ROOT/$d/rc.d/wsbsd_launchd"; done
 for d in etc private/etc; do install -m 755 "$HERE/overlay/etc-rc.d-wsbsd_machrun" "$ROOT/$d/rc.d/wsbsd_machrun"; done
