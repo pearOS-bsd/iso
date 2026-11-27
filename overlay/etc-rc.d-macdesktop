@@ -92,7 +92,7 @@ macdesktop_start()
 			daemon -u $U -o /var/log/launchd.$U.log -p $SD/launchd.$U.pid env HOME=$H USER=$U LOGNAME=$U /usr/libexec/launchd /System/Library/LaunchAgents
 		else
 			echo $$ > $SD/launchd.$U.pid
-			for app in /System/Library/CoreServices/Dock.app/Contents/MacOS/Dock /System/Library/CoreServices/SystemUIServer.app/Contents/MacOS/SystemUIServer /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder /System/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal; do
+			for app in /System/Library/CoreServices/SystemUIServer.app/Contents/MacOS/SystemUIServer /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder /System/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal; do
 				[ -x $app ] && daemon -u $U -f -o /var/log/$(basename $app).log env HOME=$H USER=$U LOGNAME=$U $DYLD $app
 			done
 		fi

@@ -276,10 +276,11 @@ cat > "$ROOT/System/Library/CoreServices/SystemVersion.plist" <<'SVP'
 </plist>
 SVP
 # the Dock (apps/dock-cocoa): a Mach-O program on the Mac's frameworks, built like the Control Center; it is /System/Library/CoreServices/Dock.app, where the Mac has it, and the session's
-# launch agent com.apple.Dock.agent starts it (it runs when the owner's cache disk is attached; the GNUstep Dock is gone)
+# launchd job com.apple.Dock.agent (apps/dock-cocoa/launchd, in the launchd of d with its Mach services) starts it; it runs when the owner's cache disk is attached
 if [ -f "$APPS_DIR/dock-cocoa/build-bsd.sh" ] && [ -d "${CCW:-}/apps" ]; then
 	if SDK_WORK="$WORK/oss" sh "$CCW/apps/dock-cocoa/build-bsd.sh" "$WORK/dock-out" >"$WORK/dock.log" 2>&1 && [ -x "$WORK/dock-out/Dock.app/Contents/MacOS/Dock" ]; then
 		rm -rf "$ROOT/System/Library/CoreServices/Dock.app"; install -d "$ROOT/System/Library/CoreServices"; cp -R "$WORK/dock-out/Dock.app" "$ROOT/System/Library/CoreServices/Dock.app"; echo "Dock built"
+		install -d "$ROOT/usr/libexec/pearos/jobs"; install -m 644 "$APPS_DIR/dock-cocoa/launchd/com.apple.Dock.agent.plist" "$ROOT/usr/libexec/pearos/jobs/"	# the Mach launchd starts it as the console user, with its Mach services
 	else echo "NOTE: the Dock did not build (see $WORK/dock.log)"; tail -5 "$WORK/dock.log"; fi
 else echo "NOTE: the Dock not built (needs apps/dock-cocoa and the Control Center's build tree)"; fi
 # lsd (github.com/pearOS-bsd/LaunchServices): the Launch Services database daemon (com.apple.lsd.mapdb), wire-compatible with the Mac's; rc.d/wsbsd_macstack starts it before every client
