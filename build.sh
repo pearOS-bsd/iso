@@ -37,7 +37,7 @@ ln -s "$WSRV_DIR" "$W/WindowServer"; ln -s "$SKYLIGHT_DIR" "$W/SkyLight"; ln -s 
 put() { mkdir -p "$2"; (cd "$1" && tar cf - --exclude .git .) | (cd "$2" && tar xf -); }
 for l in "$SDK_DIR:sdk" "$SDK_DIR/defaults:defaults" "$QC_DIR:quartzcore" "$COREUI_DIR:coreui" "$APPKIT_DIR:appkit" "$OPEN_DIR:open" \
 	"$LS_DIR:launchservices" "$LS_DIR/desktop-pictures:desktop-pictures" "$HERE:iso" "$HERE/ci:ci" "$HERE/ports:ports" "$HERE/dmg:dmg" \
-	"$APPS_DIR/dock:dock" "$APPS_DIR/finder:finder" "$APPS_DIR/topbar:topbar" "$APPS_DIR/loginwindow:loginwindow"; do put "${l%%:*}" "$WS/${l##*:}"; done
+	"$APPS_DIR/finder:finder" "$APPS_DIR/topbar:topbar" "$APPS_DIR/loginwindow:loginwindow"; do put "${l%%:*}" "$WS/${l##*:}"; done
 for p in terminal textedit ksa uitest; do put "$APPS_DIR/$p" "$W/$p"; done
 
 echo "== 1. the software"
@@ -83,9 +83,8 @@ install -d /usr/local/share/wsbsd/icons && install -m 644 "$HERE"/icons/*.icns /
 # the asset catalogues of the Mac that the file panels read (coreui): the small ones are in the repository, the big ones (SF Symbols 117 MB, CoreTypes 20 MB) are copied into coreui/assets before the build or are already in place
 install -d /usr/local/share/wsbsd/coreui && install -m 644 "$WS"/coreui/assets/DesktopServicesPriv.car "$WS"/coreui/assets/CoreTypes-Info.plist "$WS"/coreui/assets/name_aliases.strings /usr/local/share/wsbsd/coreui/
 for c in CoreGlyphs CoreTypes; do [ -f "$WS/coreui/assets/$c.car" ] && install -m 644 "$WS/coreui/assets/$c.car" /usr/local/share/wsbsd/coreui/$c.car; [ -f /usr/local/share/wsbsd/coreui/$c.car ] || echo "NOTE: $c.car missing, the file panels draw without it"; done
-# the Dock and the status area of the menu bar (they talk to WindowServer through the client library: a static archive of the objects above)
+# the status area of the menu bar (it talks to WindowServer through the client library: a static archive of the objects above)
 ar rcs "$WORK/libwsclient.a" "$WORK"/ws_*.o
-COMPAT="$WORK/compat" WSCLIENT="$WORK/libwsclient.a" sh "$WS/dock/build.sh" "$WORK/dock" > "$WORK/dock.log" 2>&1; install -m 755 "$WORK/dock/Dock" /usr/local/bin/Dock-gnustep || { cat "$WORK/dock.log"; exit 1; }
 COMPAT="$WORK/compat" WSCLIENT="$WORK/libwsclient.a" sh "$WS/topbar/build.sh" "$WORK/topbar" > "$WORK/topbar.log" 2>&1; install -m 755 "$WORK/topbar/TopBar" /usr/local/bin/TopBar-gnustep || { cat "$WORK/topbar.log"; exit 1; }
 COMPAT="$WORK/compat" sh "$WS/loginwindow/build.sh" "$WORK/loginwindow" > "$WORK/loginwindow.log" 2>&1; install -m 755 "$WORK/loginwindow/loginwindow" /usr/local/bin/loginwindow-gnustep || { cat "$WORK/loginwindow.log"; exit 1; }
 COMPAT="$WORK/compat" sh "$WS/../textedit/build.sh" "$WORK/textedit" > "$WORK/textedit.log" 2>&1; install -m 755 "$WORK/textedit/TextEdit" /usr/local/bin/TextEdit-gnustep || { cat "$WORK/textedit.log"; exit 1; }
@@ -250,6 +249,13 @@ if [ -f "$CCSRC/build-bsd.sh" ] && [ -d "$WORK/oss/sdk" ] && [ -d "$WORK/darwina
 		install -d "$ROOT/usr/libexec/pearos"; rm -rf "$ROOT/usr/libexec/pearos/ControlCenter.app"; cp -R "$WORK/cc-out/ControlCenter.app" "$ROOT/usr/libexec/pearos/ControlCenter.app"; echo "ControlCenter built"
 	else echo "NOTE: ControlCenter did not build (see $WORK/cc.log)"; tail -5 "$WORK/cc.log"; fi
 else echo "NOTE: ControlCenter not built (needs apps/controlcenter-cocoa, the open SDK and darwinator)"; fi
+# the Dock (apps/dock-cocoa): a Mach-O program on the Mac's frameworks, built like the Control Center; it is /System/Library/CoreServices/Dock.app, where the Mac has it, and the session's
+# launch agent com.apple.Dock.agent starts it (it runs when the owner's cache disk is attached; the GNUstep Dock is gone)
+if [ -f "$APPS_DIR/dock-cocoa/build-bsd.sh" ] && [ -d "${CCW:-}/apps" ]; then
+	if SDK_WORK="$WORK/oss" sh "$CCW/apps/dock-cocoa/build-bsd.sh" "$WORK/dock-out" >"$WORK/dock.log" 2>&1 && [ -x "$WORK/dock-out/Dock.app/Contents/MacOS/Dock" ]; then
+		rm -rf "$ROOT/System/Library/CoreServices/Dock.app"; install -d "$ROOT/System/Library/CoreServices"; cp -R "$WORK/dock-out/Dock.app" "$ROOT/System/Library/CoreServices/Dock.app"; echo "Dock built"
+	else echo "NOTE: the Dock did not build (see $WORK/dock.log)"; tail -5 "$WORK/dock.log"; fi
+else echo "NOTE: the Dock not built (needs apps/dock-cocoa and the Control Center's build tree)"; fi
 # lsd (github.com/pearOS-bsd/LaunchServices): the Launch Services database daemon (com.apple.lsd.mapdb), wire-compatible with the Mac's; rc.d/wsbsd_macstack starts it before every client
 if [ -f "$LS_DIR/build-bsd.sh" ] && [ -d "$WORK/oss/sdk" ] && [ -d "$WORK/darwinator" ]; then
 	LSW="$WORK/lsw"; rm -rf "$LSW"; mkdir -p "$LSW"; put "$LS_DIR" "$LSW/LaunchServices"; ln -s "$WORK/darwinator" "$LSW/darwinator"
