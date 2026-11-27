@@ -234,7 +234,8 @@ else echo "NOTE: launchd not built (no ld64.lld or no darwin/launchd in the d re
 if [ -x /usr/local/llvm21/bin/ld64.lld ] && [ -d "$D_DIR/darwin" ]; then
 	if sh "$D_DIR/darwin/build.sh" "$WORK/darwin-out" >"$WORK/darwin.log" 2>&1; then
 		install -d "$ROOT/usr/libexec/pearos"
-		for f in wsbridge/wsbridge notifyd/notifyd lsd-stub/out/lsd-stub carender-stub/out/carender-stub svc-stub/out/svc-stub; do [ -x "$WORK/darwin-out/$f" ] && install -m 755 "$WORK/darwin-out/$f" "$ROOT/usr/libexec/pearos/$(basename "$f")" || echo "NOTE: $f was not built"; done
+		for f in wsbridge/wsbridge notifyd/notifyd lsd-stub/out/lsd-stub carender-stub/out/carender-stub svc-stub/out/svc-stub tccd/out/tccd; do [ -x "$WORK/darwin-out/$f" ] && install -m 755 "$WORK/darwin-out/$f" "$ROOT/usr/libexec/pearos/$(basename "$f")" || echo "NOTE: $f was not built"; done
+		[ -x "$ROOT/usr/libexec/pearos/tccd" ] && install -d "$ROOT/usr/libexec/pearos/jobs" && install -m 644 "$D_DIR"/darwin/tccd/launchd/*.plist "$ROOT/usr/libexec/pearos/jobs/"	# tccd (com.apple.tccd.system, com.apple.tccd): jobs of the Mach launchd, started on demand
 		install -m 755 "$D_DIR/darwin/launchd/mkfolders.sh" "$ROOT/usr/libexec/pearos/mkfolders.sh" 2>/dev/null || true
 		echo "darwin stack built: $(ls "$ROOT/usr/libexec/pearos" | tr '\n' ' ')"
 	else echo "NOTE: the darwin stack did not build (see $WORK/darwin.log)"; tail -5 "$WORK/darwin.log"; fi
