@@ -249,6 +249,32 @@ if [ -f "$CCSRC/build-bsd.sh" ] && [ -d "$WORK/oss/sdk" ] && [ -d "$WORK/darwina
 		install -d "$ROOT/usr/libexec/pearos"; rm -rf "$ROOT/usr/libexec/pearos/ControlCenter.app"; cp -R "$WORK/cc-out/ControlCenter.app" "$ROOT/usr/libexec/pearos/ControlCenter.app"; echo "ControlCenter built"
 	else echo "NOTE: ControlCenter did not build (see $WORK/cc.log)"; tail -5 "$WORK/cc.log"; fi
 else echo "NOTE: ControlCenter not built (needs apps/controlcenter-cocoa, the open SDK and darwinator)"; fi
+# /System/Library/CoreServices/SystemVersion.plist: the version of macOS that the programs of the Mac see (the release whose frameworks the owner's cache disk carries).  Without it
+# HIServices' _RegisterApplication cannot compare the system with LSMinimumSystemVersion of an application and aborts it (found with the real Dock, 2026-11-27); the values are
+# the facts of macOS 26.7.2 (25G332), written here (not copied from a Mac)
+install -d "$ROOT/System/Library/CoreServices"
+cat > "$ROOT/System/Library/CoreServices/SystemVersion.plist" <<'SVP'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>BuildID</key>
+	<string>4F33A3F8-CDFC-11F1-914A-0DD9DDC6AC7B</string>
+	<key>ProductBuildVersion</key>
+	<string>25G332</string>
+	<key>ProductCopyright</key>
+	<string>1983-2026 Apple Inc.</string>
+	<key>ProductName</key>
+	<string>macOS</string>
+	<key>ProductUserVisibleVersion</key>
+	<string>26.7.2</string>
+	<key>ProductVersion</key>
+	<string>26.7.2</string>
+	<key>iOSSupportVersion</key>
+	<string>26.7</string>
+</dict>
+</plist>
+SVP
 # the Dock (apps/dock-cocoa): a Mach-O program on the Mac's frameworks, built like the Control Center; it is /System/Library/CoreServices/Dock.app, where the Mac has it, and the session's
 # launch agent com.apple.Dock.agent starts it (it runs when the owner's cache disk is attached; the GNUstep Dock is gone)
 if [ -f "$APPS_DIR/dock-cocoa/build-bsd.sh" ] && [ -d "${CCW:-}/apps" ]; then
