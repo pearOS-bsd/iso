@@ -289,6 +289,7 @@ if [ -f "$LS_DIR/build-bsd.sh" ] && [ -d "$WORK/oss/sdk" ] && [ -d "$WORK/darwin
 	LSW="$WORK/lsw"; rm -rf "$LSW"; mkdir -p "$LSW"; put "$LS_DIR" "$LSW/LaunchServices"; ln -s "$WORK/darwinator" "$LSW/darwinator"
 	if SDK_WORK="$WORK/oss" sh "$LSW/LaunchServices/build-bsd.sh" "$WORK/ls-out" >"$WORK/ls.log" 2>&1 && [ -x "$WORK/ls-out/lsd" ]; then
 		install -d "$ROOT/usr/libexec/pearos/jobs"; install -m 755 "$WORK/ls-out/lsd" "$ROOT/usr/libexec/pearos/lsd"; install -m 644 "$LS_DIR"/launchd/*.plist "$ROOT/usr/libexec/pearos/jobs/"; echo "lsd built"
+		[ -x "$WORK/ls-out/launchservicesd" ] && install -m 755 "$WORK/ls-out/launchservicesd" "$ROOT/usr/libexec/pearos/launchservicesd" && echo "launchservicesd built"	# com.apple.coreservices.launchservicesd (its job plist is among launchd/*.plist; lsd-stub leaves the name to it)
 	else echo "NOTE: lsd did not build (see $WORK/ls.log)"; tail -5 "$WORK/ls.log"; fi
 fi
 # IconServices (github.com/pearOS-bsd/IconServices): iconservicesagent (com.apple.iconservices) and iconservicesd (com.apple.iconservices.store), wire-compatible with the Mac's; rc.d/wsbsd_macstack starts them with the stack
