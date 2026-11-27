@@ -28,9 +28,21 @@ wsbsd_macdeps_start()
 	install -m 755 /System/Volumes/dyld /tmp/big/ul/dyld
 	[ -f /System/Volumes/cfprefsd ] && install -m 755 /System/Volumes/cfprefsd /tmp/big/cfprefsd		# the Mac's preferences daemon: without it every CFPreferences call of a program of the Mac waits
 	[ -d /System/Volumes/Fonts ] && cp /System/Volumes/Fonts/* /tmp/big/sl/Fonts/ 2>/dev/null
+	# the applications of the system as the owner's Mac has them (macdeps/app-resources.sh: each bundle's Info.plist, icon files and asset catalog; Launch Services, IconServices and the Dock read them):
+	# /System/Applications is laid over the skeletons of the image (read-only, from the disk), the bundles of CoreServices are copied into the tmpfs copy of /System/Library.  Safari needs nothing:
+	# its bundle is on the disk at Preboot/Cryptexes/App/System/Applications, which is the path a Mac has under /System/Volumes.
+	# (an Info.plist of the image that names an executable belongs to a program of our own that lives there, as the session's Dock and Finder: it stays; a skeleton's is replaced)
+	for b in /System/Volumes/System/Library/CoreServices/*.app; do
+		[ -d "$b" ] || continue
+		t=/tmp/big/sl/CoreServices/${b##*/}
+		mkdir -p "$t/Contents/Resources"
+		cp "$b"/Contents/Resources/* "$t/Contents/Resources/" 2>/dev/null
+		grep -q CFBundleExecutable "$t/Contents/Info.plist" 2>/dev/null || cp "$b/Contents/Info.plist" "$t/Contents/Info.plist"
+	done
 	# the agents start their programs through /usr/lib/dyld (the ELF launcher of the image): the Mac's dyld cannot start our ELF programs, and the kernel starts a Mach-O one by itself now
 	for f in /tmp/big/sl/LaunchAgents/*.plist; do [ -f "$f" ] && sed -i '' 's#<string>/usr/lib/dyld</string>##' "$f"; done
 	mount -t nullfs /tmp/big/sl /System/Library && mount -t nullfs /tmp/big/ul /usr/lib || return 0
+	[ -d /System/Volumes/System/Applications ] && mount -t nullfs -o ro /System/Volumes/System/Applications /System/Applications
 	sysctl kern.darwinator.dyld=1 kern.darwinator.two_volumes=2 kern.darwinator.fast_sleep_ms=5 >/dev/null
 	binmiscctl disable macho64 >/dev/null 2>&1; binmiscctl disable machofat >/dev/null 2>&1
 	echo "wsbsd_macdeps: the Mac's dyld and shared cache are in place"
