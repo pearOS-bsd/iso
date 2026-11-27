@@ -31,6 +31,7 @@ wsbsd_macdeps_start()
 	# the applications of the system as the owner's Mac has them (macdeps/app-resources.sh: each bundle's Info.plist, icon files and asset catalog; Launch Services, IconServices and the Dock read them):
 	# /System/Applications is laid over the skeletons of the image (read-only, from the disk), the bundles of CoreServices are copied into the tmpfs copy of /System/Library.  Safari needs nothing:
 	# its bundle is on the disk at Preboot/Cryptexes/App/System/Applications, which is the path a Mac has under /System/Volumes.
+	[ -d /System/Volumes/System/Library/FeatureFlags ] && cp -R /System/Volumes/System/Library/FeatureFlags/. /tmp/big/sl/FeatureFlags/	# the Mac's feature flags (macdeps/feature-flags.sh): os_feature_enabled reads them
 	# (an Info.plist of the image that names an executable belongs to a program of our own that lives there, as the session's Dock and Finder: it stays; a skeleton's is replaced)
 	for b in /System/Volumes/System/Library/CoreServices/*.app; do
 		[ -d "$b" ] || continue
