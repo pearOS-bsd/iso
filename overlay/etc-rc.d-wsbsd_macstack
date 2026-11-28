@@ -35,8 +35,9 @@ wsbsd_macstack_start()
 	  [ -n "$U" ] || exit 0
 	  H=/Users/$U
 	  CCRUN=/usr/lib/dyld; [ "$(head -c4 $CCRUN 2>/dev/null | tail -c3)" = ELF ] || CCRUN=""      # the Mac's own dyld is not started like a program: the kernel runs a Mach-O file through it
+	  # CC_SLS_PANEL: the panel as a SkyLight window (no AppKit): the Mac AppKit path (NSWindow + the system glass) still hangs in NSApplication init on pearOS (2026-11-28)
 	  # CC_NO_SYSTEM_SERVICES: the daemons behind CoreWLAN, IOBluetooth, MediaRemote ... do not exist yet (a call into them never returns while holding dyld's lock); CC_LISTEN_ONLY: pearOS' event taps are listen-only
-	  daemon -u $U -f -o /var/log/ControlCenter.log env HOME=$H USER=$U LOGNAME=$U WS_SOCKET=$WS_SOCKET CC_NO_SYSTEM_SERVICES=1 CC_LISTEN_ONLY=1 CC_NO_STATUSBAR=1 $CCRUN $LIBX/ControlCenter.app/Contents/MacOS/ControlCenter
+	  daemon -u $U -f -o /var/log/ControlCenter.log env HOME=$H USER=$U LOGNAME=$U WS_SOCKET=$WS_SOCKET CC_NO_SYSTEM_SERVICES=1 CC_LISTEN_ONLY=1 CC_NO_STATUSBAR=1 CC_SLS_PANEL=1 $CCRUN $LIBX/ControlCenter.app/Contents/MacOS/ControlCenter
 	) &
 }
 wsbsd_macstack_stop()
