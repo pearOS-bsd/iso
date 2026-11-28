@@ -4,8 +4,8 @@
 # KEYWORD: nojail shutdown
 # The Mach side of the desktop for the programs of the Mac, and our Control Center on it (github.com/pearOS-bsd/apps, controlcenter-cocoa).  Only when the Mac's frameworks are there (kern.darwinator.dyld=1: the owner's
 # dyld cache mounted) and the image carries the daemons (built by iso/build.sh into /usr/libexec/pearos): launchd is started again with the stand-ins that SkyLight's clients talk to (notifyd; wsbridge = the front of the
-# window server; carender-stub = the render server; lsd and a power service; cfprefsd of the Mac when it is there) and, when the session of an account is on the screen, the panel of Control Center.  Without the cache nothing
-# changes: the Control Center of the top bar (TopBar) stays.
+# window server; carender-stub = the render server; lsd and a power service; cfprefsd of the Mac when it is there) and, when the session of an account is on the screen, the panel of Control Center.  Without the cache there is
+# no Control Center (the GNUstep one of the top bar was removed).
 . /etc/rc.subr
 name="wsbsd_macstack"
 rcvar="wsbsd_macstack_enable"
@@ -36,7 +36,7 @@ wsbsd_macstack_start()
 	  H=/Users/$U
 	  CCRUN=/usr/lib/dyld; [ "$(head -c4 $CCRUN 2>/dev/null | tail -c3)" = ELF ] || CCRUN=""      # the Mac's own dyld is not started like a program: the kernel runs a Mach-O file through it
 	  # CC_NO_SYSTEM_SERVICES: the daemons behind CoreWLAN, IOBluetooth, MediaRemote ... do not exist yet (a call into them never returns while holding dyld's lock); CC_LISTEN_ONLY: pearOS' event taps are listen-only
-	  daemon -u $U -f -o /var/log/ControlCenter.log env HOME=$H USER=$U LOGNAME=$U WS_SOCKET=$WS_SOCKET CC_NO_SYSTEM_SERVICES=1 CC_LISTEN_ONLY=1 CC_NO_STATUSBAR=1 $CCRUN $LIBX/ControlCenter.app/Contents/MacOS/ControlCenter; touch /var/run/wsbsd_cc_active      # the top bar does not open a panel of its own then: this one answers the click
+	  daemon -u $U -f -o /var/log/ControlCenter.log env HOME=$H USER=$U LOGNAME=$U WS_SOCKET=$WS_SOCKET CC_NO_SYSTEM_SERVICES=1 CC_LISTEN_ONLY=1 CC_NO_STATUSBAR=1 $CCRUN $LIBX/ControlCenter.app/Contents/MacOS/ControlCenter
 	) &
 }
 wsbsd_macstack_stop()

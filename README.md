@@ -20,6 +20,6 @@ On a FreeBSD machine that already has the software installed (the GNUstep stack 
 
 ## The Mac side of the image needs the owner's cache disk (2026-11-20)
 The programs of the Mac (our Control Center, Terminal ...) run on the Mac's own dyld, shared cache, `cfprefsd` and fonts, which never are in the image.  Attach the disk labelled `MACCACHE` (made by `macdeps` from the owner's Mac: `Preboot/Cryptexes/OS/System/Library/dyld/` (the cache), `dyld` (thin x86_64 slice of /usr/lib/dyld), `cfprefsd`, `Fonts/`): the rc script `wsbsd_macdeps` mounts it and puts the files in place, `wsbsd_macstack` then starts the Mach stack and our Control Center when an account is on the screen.  Without the disk the top bar's own (GNUstep) Control Center is the only one (it has no Edit Controls).
-* Control Center (Mac side) answers the click on the bar's item through an event tap: `/var/run/wsbsd_cc_active` tells the top bar not to open its own panel.
+* Control Center (apps/controlcenter-cocoa, Mac side) answers the click on the bar's item through an event tap; the top bar has no Control Center of its own (the GNUstep one was removed 2026-11-28).
 * Testing without a window: `DISPLAY_OPT=none RES=1920x1080 sh tools/run-vm.sh ...` gives a screen of exactly that size (a GTK window forces its own size); `screendump` through the monitor socket, keys with `sendkey`, serial login on the socket.  Log in: Return on the account, `pear`, Return.
 * The window server uses its software compositor when EGL's renderer is llvmpipe (CPU): faster than GL on the CPU.
