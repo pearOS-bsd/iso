@@ -191,6 +191,8 @@ fi
 # its helpers (libmachcompat.so: fixes of GNUstep that Apple's programs trip over; libexctrace.so: stack traces for debugging), `macapp APP.app`, and the kernel module darwinator.ko (static Mach-O programs, not loaded by default).
 # Built here, on the build machine (it has the compiler and GNUstep's headers); at boot the rc script wsbsd_machrun tells the kernel to hand Mach-O files to machrun (imgact_binmisc).
 DYLD_DIR=$(pear_repo dyld "$DYLD_DIR") || DYLD_DIR=""
+# the aliases of the frameworks laid out by the manifest (Foo.framework/Foo, Versions/Current): their binaries are in the dyld cache, and dlopen() of an alias path needs them (AppKit soft-links ViewBridge)
+[ -n "$DYLD_DIR" ] && python3 "$DYLD_DIR/tools/fwskel.py" --tree "$ROOT"
 if pear_fetch darwinator "${PEAR_DARWINATOR_REF:-main}" "$WORK/darwinator"; then
 	if [ -n "$DYLD_DIR" ] && (cd "$DYLD_DIR/machrun" && make clean >/dev/null 2>&1; make CFLAGS="-fPIE -fPIC -I$DYLD_DIR/src -I$WORK/darwinator/src -O1 -Wall -Wno-unused-parameter" >"$WORK/darwinator.log" 2>&1); then
 		install -d "$ROOT/usr/local/bin" "$ROOT/usr/local/lib" "$ROOT/usr/local/libexec"
